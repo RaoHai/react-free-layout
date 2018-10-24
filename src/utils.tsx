@@ -15,12 +15,17 @@ export function synchronizeLayoutWithChildren(
   children: JSX.Element[] | JSX.Element,
   cols: number,
   compactType: CompactType = 'vertical'
-): Layout {
+): {
+  layout: Layout;
+  maxZ: number;
+} {
   let layout: Layout = initialLayout;
+  let maxZ = -Infinity;
 
   React.Children.forEach(children, (child: ReactElement<any>, index) => {
     const definition = getLayoutItem(layout, String(child.key));
     if (definition) {
+      maxZ = Math.max(maxZ, definition.z || 0);
       layout[index] = definition;
     } else {
       const g = child.props["data-grid"];
@@ -29,14 +34,17 @@ export function synchronizeLayoutWithChildren(
   });
 
   layout = correctBounds(layout, { cols });
-  return layout;
+  return {
+    layout,
+    maxZ,
+  }
 }
 
 export function getLayoutItem(layout: Layout, key: string): LayoutItem | undefined {
   return layout.find(({ i }) => i === key);
 }
 
-export function setTransform({ top, left, width, height }: Position): {} {
+export function setTransform({ top, left, width, height }: Position, z: number = 1): {} {
   // Replace unitless items with px
   const translate = `translate(${left}px,${top}px)`;
   return {
@@ -48,7 +56,7 @@ export function setTransform({ top, left, width, height }: Position): {} {
     width: `${width}px`,
     height: `${height}px`,
     position: "absolute",
-    zIndex: 1,
+    zIndex: z,
   };
 }
 

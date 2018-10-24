@@ -296,7 +296,7 @@ GridResizeCallbacks<GridResizeCallback>&
   render() {
     const {
       margin, colWidth, containerPadding, rowHeight, isDraggable = true,
-      x, y, w, h,
+      x, y, w, h, z,
       children, className, style,
     } = this.props;
 
@@ -313,7 +313,7 @@ GridResizeCallbacks<GridResizeCallback>&
       height:
         h === Infinity
           ? h
-          : Math.round(rowHeight * h + Math.max(0, h - 1) * margin[1])
+          : Math.round(rowHeight * h + Math.max(0, h - 1) * margin[1]),
     };
 
     const position = this.calcPosition(x, y, w, h, this.state);
@@ -334,7 +334,7 @@ GridResizeCallbacks<GridResizeCallback>&
       style: {
         ...style,
         ...child.props.style,
-        ...setTransform(out)
+        ...setTransform(out, z),
       }
     });
 

@@ -10,6 +10,7 @@ export interface LayoutItem {
   x: number;
   y: number;
   i: string;
+  z?: number;
   minW?: number;
   minH?: number;
   maxW?: number;
@@ -20,6 +21,7 @@ export interface LayoutItem {
   isResizable?: boolean;
 }
 
+const TOP = 999;
 export type Layout = LayoutItem[];
 export interface IGridLayoutState {
   layout: Layout;
@@ -28,6 +30,7 @@ export interface IGridLayoutState {
   oldLayout?: Layout | null;
   oldResizeItem?: LayoutItem | null;
   activeDrag?: LayoutItem | null;
+  maxZ: number;
 }
 
 function noop() { return; }
@@ -89,12 +92,12 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     super(props);
     const { layout, children, cols, compactType } = props;
     this.state = {
-      layout: synchronizeLayoutWithChildren(
+      ...(synchronizeLayoutWithChildren(
         layout,
         children,
         cols,
         compactType,
-      ),
+      )),
       mounted: false,
     }
   }
@@ -111,12 +114,14 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       nextProps.compactType !== this.props.compactType
     ) {
       const { layout, children, cols } = nextProps;
-      synchronizeLayoutWithChildren(
-        layout,
-        children,
-        cols,
-        nextProps.compactType,
-      )
+      this.setState({
+        ...synchronizeLayoutWithChildren(
+          layout,
+          children,
+          cols,
+          nextProps.compactType,
+        )
+      });
     }
   }
 
@@ -158,6 +163,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       y: l.y,
       placeholder: true,
       i,
+      z: TOP
     };
 
     // Move the element to the dragged location.
@@ -189,12 +195,14 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   onDragStop = (i: string, x: number, y: number, { e, node }: GridDragEvent) => {
     const { oldDragItem } = this.state;
     let { layout } = this.state;
+    const { maxZ } = this.state;
     const { cols } = this.props;
     const l = getLayoutItem(layout, i);
     if (!l) {
       return;
     }
 
+    l.z = maxZ +1;
     // Move the element here
     const isUserAction = true;
     layout = moveElement(
@@ -211,6 +219,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     // Set state
     const { oldLayout } = this.state;
     this.setState({
+      maxZ: maxZ + 1,
       activeDrag: null,
       layout,
       oldDragItem: undefined,
@@ -221,13 +230,16 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   onResizeStart = (i: string, w: number, h: number, { e, node }: GridResizeEvent) => {
-    const { layout } = this.state;
+    const { layout, maxZ } = this.state;
     const l = getLayoutItem(layout, i);
     if (!l) {
       return;
     }
 
+    l.z = maxZ + 1;
+
     this.setState({
+      maxZ: maxZ + 1,
       oldResizeItem: cloneLayoutItem(l),
       oldLayout: this.state.layout
     });
@@ -253,6 +265,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       y: l.y,
       static: true,
       i,
+      z: TOP,
     };
 
     this.props.onResize(layout, oldResizeItem, l, placeholder, e, node);
@@ -329,6 +342,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       y={l.y}
       w={l.w}
       h={l.h}
+      z={l.z}
     >{child}</GridItem>
   }
 
@@ -354,6 +368,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         x={activeDrag.x}
         y={activeDrag.y}
         i={activeDrag.i}
+        z={activeDrag.z}
         className="react-grid-placeholder"
         containerWidth={width}
         cols={cols}
