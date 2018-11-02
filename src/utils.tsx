@@ -1,6 +1,5 @@
 import React from 'react';
 import { Layout, LayoutItem } from './Layout';
-import { ReactElement } from 'react';
 
 export type CompactType = 'horizontal' | 'vertical';
 export interface Position {
@@ -22,7 +21,10 @@ export function synchronizeLayoutWithChildren(
   let layout: Layout = initialLayout;
   let maxZ = -Infinity;
 
-  React.Children.forEach(children, (child: ReactElement<any>, index) => {
+  React.Children.forEach(children, (child: React.ReactChild, index) => {
+    if (!React.isValidElement(child)) {
+      return;
+    }
     const definition = getLayoutItem(layout, String(child.key));
     if (definition) {
       maxZ = Math.max(maxZ, definition.z || 0);

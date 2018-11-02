@@ -31,11 +31,13 @@ export type GridDragCallback = (
   event: GridDragEvent,
 ) => void;
 
+export type CallbackItem = { e: MouseEvent; node: DraggableData['node']; size: Position };
+
 export type GridResizeCallback = (
   i: string,
   w: number,
   h: number,
-  { e, node, size }: { e: MouseEvent; node: DraggableData['node']; size: Position },
+  ev: CallbackItem,
   axis: Axis,
 ) => void;
 

@@ -3,7 +3,6 @@ import * as ReactDOM from 'react-dom';
 import _ from 'lodash';
 import Layout from './Layout';
 import './index.css';
-import registerServiceWorker from './registerServiceWorker';
 
 function generateLayout() {
   return _.map(_.range(0, 25), (item, i) => {
@@ -43,4 +42,3 @@ ReactDOM.render(
   </Layout>,
   document.getElementById('root') as HTMLElement
 );
-registerServiceWorker();
