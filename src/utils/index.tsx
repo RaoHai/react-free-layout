@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, LayoutItem } from './Layout';
+import { Layout, LayoutItem } from '../components/Layout';
 
 export type CompactType = 'horizontal' | 'vertical';
 export interface Position {

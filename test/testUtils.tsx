@@ -1,10 +1,7 @@
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import React from 'react';
 import _ from 'lodash';
-import Layout from './Layout';
-import './index.css';
 
-function generateLayout() {
+export function generateLayout() {
   return _.map(_.range(0, 25), (item, i) => {
     const y = Math.ceil(Math.random() * 12) + 1;
     return {
@@ -18,7 +15,7 @@ function generateLayout() {
   });
 }
 
-function generateDOM(layouts: any[]) {
+export function generateDOM(layouts: any[]) {
   return _.map(layouts, (l, i) => {
     return (
       <div key={i} className={l.static ? 'react-grid-item static' : 'react-grid-item'}>
@@ -29,16 +26,3 @@ function generateDOM(layouts: any[]) {
       </div>);
   });
 }
-
-const layout = generateLayout();
-
-ReactDOM.render(
-  <Layout
-    layout={layout}
-    width={1024}
-    grid={[8, 8]}
-  >
-    {generateDOM(layout)}
-  </Layout>,
-  document.getElementById('root') as HTMLElement
-);
