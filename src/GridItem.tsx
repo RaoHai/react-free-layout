@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { DraggableCore, DraggableData } from 'react-draggable';
 import { Resizable } from '@alipay/deer-react-resizable';
 import classNames from 'classnames';
-import { LayoutItem } from './App';
+import { LayoutItem } from './Layout';
 import { setTransform } from './utils';
 
 export interface GridDragEvent {

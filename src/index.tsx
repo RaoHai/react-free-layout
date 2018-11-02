@@ -1,17 +1,17 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import _ from 'lodash';
-import App from './App';
+import Layout from './Layout';
 import './index.css';
 import registerServiceWorker from './registerServiceWorker';
 
 function generateLayout() {
   return _.map(_.range(0, 25), (item, i) => {
-    const y = Math.ceil(Math.random() * 4) + 1;
+    const y = Math.ceil(Math.random() * 12) + 1;
     return {
-      x: _.random(0, 5) * 2 % 12,
+      x: _.random(0, 5) * 10,
       y: Math.floor(i / 6) * y,
-      w: 2,
+      w: 10,
       h: y,
       i: i.toString(),
       static: Math.random() < 0.05
@@ -34,15 +34,13 @@ function generateDOM(layouts: any[]) {
 const layout = generateLayout();
 
 ReactDOM.render(
-  <App
+  <Layout
     layout={layout}
     width={1024}
-    cols={24}
-    rowHeight={16}
-    margin={[ 8, 8 ]}
+    grid={[8, 8]}
   >
     {generateDOM(layout)}
-  </App>,
+  </Layout>,
   document.getElementById('root') as HTMLElement
 );
 registerServiceWorker();
