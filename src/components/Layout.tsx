@@ -1,10 +1,23 @@
 import React, { ReactChild } from 'react';
 import isEqual from 'lodash.isequal';
-import { synchronizeLayoutWithChildren, CompactType, getLayoutItem, cloneLayoutItem, moveElement, bottom, pickByRect, getRectFromPoints, getBoundingRectFromLayout, noop } from '../utils';
+import {
+  synchronizeLayoutWithChildren,
+  CompactType,
+  getLayoutItem,
+  cloneLayoutItem,
+  moveElement,
+  bottom,
+  pickByRect,
+  getRectFromPoints,
+  getBoundingRectFromLayout,
+  noop,
+} from '../utils';
+
 import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, GridResizeCallbacks } from './GridItem';
 import { DraggableData } from 'react-draggable';
 import Selection, { MousePosition } from './Selection';
 
+const temporaryGroupId = Symbol('template');
 export interface LayoutItem {
   w: number;
   h: number;
@@ -26,6 +39,9 @@ const TOP = 999;
 export type Layout = LayoutItem[];
 export interface IGridLayoutState {
   layout: Layout;
+  group: {
+    [key in symbol]: Layout;
+  };
   mounted: boolean;
   focusItem?: LayoutItem | null;
   oldDragItem?: LayoutItem | null;
@@ -107,6 +123,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         cols,
         compactType,
       )),
+      group: {},
       mounted: false,
     }
   }
@@ -331,7 +348,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     this.setState({ selectedLayout });
   }
 
-  endSelection = (start?: MousePosition, end?: MousePosition) => {
+  endSelection = () => {
     this.setState({ selecting: false });
     this.addTemporaryGroup(this.state.selectedLayout);
   }
@@ -341,7 +358,9 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       return;
     }
 
-
+    const group = { ...this.state.group };
+    group[temporaryGroupId] = selectedLayout;
+    this.setState({ group });
   }
 
   processGridItem(child: ReactChild, colWidth: number) {
@@ -451,8 +470,12 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     );
   }
 
-  selectionPlaceHolder() {
-    const { selectedLayout, selecting } = this.state;
+  groupPlaceholder() {
+
+
+    const { selecting, group } = this.state;
+
+    const selectedLayout = group[temporaryGroupId];
     if (selecting || !selectedLayout || !selectedLayout.length) {
       return null;
     }
@@ -501,7 +524,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onSelectEnd={this.endSelection}
     >
       <div style={{ width, height: (bottom + 10) * colWith }}>
-        {this.selectionPlaceHolder()}
+        {this.groupPlaceholder()}
         {React.Children.map(this.props.children,
           child => this.processGridItem(child, colWith)
         )}
