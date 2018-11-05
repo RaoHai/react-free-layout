@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Layout, LayoutItem } from '../components/Layout';
 import Selection from '../components/Selection';
+import { TouchEvent } from './events';
 
 export type CompactType = 'horizontal' | 'vertical';
 export interface Position {
@@ -188,8 +189,7 @@ export function moveElement(
   return layout;
 }
 
-export type MouseTouchEvent = React.TouchEvent & TouchEvent;
-export function getTouchIdentifier(e: MouseTouchEvent): number {
+export function getTouchIdentifier(e: Pick<TouchEvent, 'targetTouches' | 'changedTouches'>): number {
   if (e.targetTouches && e.targetTouches[0]) {
     return e.targetTouches[0].identifier;
   }
@@ -214,13 +214,13 @@ function findInArray<T>(array: ArrayLike<T>, iter: (i: T) => boolean): T | null 
   return null;
 }
 
-export function getTouch(e: React.TouchEvent, identifier: number): { clientX: number, clientY: number } | null {
+export function getTouch(e: TouchEvent, identifier: number): { clientX: number, clientY: number } | null {
   return (e.targetTouches && findInArray(e.targetTouches, t => identifier === t.identifier)) ||
          (e.changedTouches && findInArray(e.changedTouches, t => identifier === t.identifier));
 }
 
 export function getControlPosition(
-  e: React.TouchEvent,
+  e: TouchEvent,
   identifier: number,
   selection: Selection,
 ) {

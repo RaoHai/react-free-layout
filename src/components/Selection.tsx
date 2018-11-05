@@ -1,7 +1,7 @@
 import React, { Component, EventHandler } from 'react';
 import ReactDOM from 'react-dom';
-import { getTouchIdentifier, getControlPosition, MouseTouchEvent } from '../utils/index';
-import { addEventListener } from '../utils/events';
+import { getTouchIdentifier, getControlPosition } from '../utils/index';
+import { addEventListener, TouchEvent } from '../utils/events';
 
 export interface SelectionProps {
   offsetParent?: Element;
@@ -15,15 +15,16 @@ export default class Selection extends Component<SelectionProps> {
     touchIdentifier: null,
   };
 
-  moveSelection: EventListener = (e: MouseEvent & TouchEvent) => {
-    const touchIdentifier = getTouchIdentifier(e as MouseTouchEvent);
-    // const position = getControlPosition(e, touchIdentifier, this);
-    // if (!position) {
-    //   return;
-    // }
+  moveSelection: EventListener = (e: any) => {
+    const touchIdentifier = getTouchIdentifier(e);
+    const position = getControlPosition(e, touchIdentifier, this);
+    if (!position) {
+      return;
+    }
+    console.log('>> moveSeletion', position);
   }
 
-  startSelection: EventHandler<MouseTouchEvent> = e => {
+  startSelection: EventHandler<TouchEvent> = e => {
     const touchIdentifier = getTouchIdentifier(e);
     const position = getControlPosition(e, touchIdentifier, this);
     if (!position) {
