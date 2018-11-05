@@ -21,15 +21,35 @@ export interface SelectionState {
 }
 
 export default class Selection extends DisposableComponent<SelectionProps, SelectionState> {
-  state = {
-    dragging: false,
-    start: null,
-    end: null,
-    touchIdentifier: 0,
-  };
-
   private dragWrapper: Element | null = null;
 
+  constructor(props: SelectionProps) {
+    super(props);
+    this.state = {
+      dragging: false,
+      start: null,
+      end: null,
+      touchIdentifier: 0,
+    }
+  }
+  startSelection: EventHandler<TouchEvent> = e => {
+    if (e.target !== this.dragWrapper) {
+      return;
+    }
+    const touchIdentifier = getTouchIdentifier(e);
+    const position = getControlPosition(e, touchIdentifier, this);
+    if (!position) {
+      return;
+    }
+    this.setState({
+      dragging: true,
+      touchIdentifier,
+      start: position,
+    });
+
+    this.addEventListener('mousemove', this.moveSelection);
+    this.addEventListener('mouseup', this.moveSelectionStop)
+  }
 
   moveSelection: EventListener = (e: any) => {
     const { dragging, start } = this.state;
@@ -40,7 +60,7 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     const touchIdentifier = getTouchIdentifier(e);
     const position = getControlPosition(e, touchIdentifier, this);
 
-    if (!position) {
+    if (!position || !start) {
       return;
     }
 
@@ -70,26 +90,6 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
 
     this.removeEventListener('mousemove', this.moveSelection);
     this.removeEventListener('mouseup', this.moveSelection);
-
-  }
-
-  startSelection: EventHandler<TouchEvent> = e => {
-    if (e.target !== this.dragWrapper) {
-      return;
-    }
-    const touchIdentifier = getTouchIdentifier(e);
-    const position = getControlPosition(e, touchIdentifier, this);
-    if (!position) {
-      return;
-    }
-    this.setState({
-      dragging: true,
-      touchIdentifier,
-      start: position,
-    });
-
-    this.addEventListener('mousemove', this.moveSelection);
-    this.addEventListener('mouseup', this.moveSelectionStop)
   }
 
   drawingHandler() {
@@ -115,9 +115,9 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
 
 function getSelectionRegion(start: MousePosition, end: MousePosition): {} {
   return {
-    left: start.x,
-    top: start.y,
-    width: end.x - start.x,
-    height: end.y - start.y,
+    left: Math.min(start.x, end.x),
+    top: Math.min(start.y, end.y),
+    width: Math.abs(end.x - start.x),
+    height: Math.abs(end.y - start.y),
   };
 }

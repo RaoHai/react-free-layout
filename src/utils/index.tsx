@@ -254,11 +254,16 @@ export interface GridRect {
 }
 
 export function getRectFromPoints(start: MousePosition, end: MousePosition, colWidth: number): GridRect {
+  const x = Math.min(start.x, end.x);
+  const y = Math.min(start.y, end.y);
+  const right = Math.max(start.x, end.x);
+  const bottom = Math.max(start.y, end.y);
+
   return {
-    x: Math.floor(start.x / colWidth),
-    y: Math.floor(start.y / colWidth),
-    right: Math.ceil(end.x / colWidth),
-    bottom: Math.ceil(end.y / colWidth),
+    x: Math.floor(x / colWidth),
+    y: Math.floor(y / colWidth),
+    right: Math.ceil(right / colWidth),
+    bottom: Math.ceil(bottom / colWidth),
   };
 }
 
