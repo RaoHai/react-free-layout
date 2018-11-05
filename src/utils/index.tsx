@@ -1,9 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Layout, LayoutItem } from '../components/Layout';
-import Selection from '../components/Selection';
+import Selection, { MousePosition } from '../components/Selection';
 import { TouchEvent } from './events';
-
 export type CompactType = 'horizontal' | 'vertical';
 export interface Position {
   left: number,
@@ -245,4 +244,36 @@ export function offsetXYFromParent(evt: { clientX: number, clientY: number }, of
   const y = evt.clientY + offsetParent.scrollTop - offsetParentRect.top;
 
   return { x, y };
+}
+
+export interface GridRect {
+  x: number;
+  y: number;
+  right: number;
+  bottom: number;
+}
+
+export function getRectFromPoints(start: MousePosition, end: MousePosition, colWidth: number): GridRect {
+  return {
+    x: Math.floor(start.x / colWidth),
+    y: Math.floor(start.y / colWidth),
+    right: Math.ceil(end.x / colWidth),
+    bottom: Math.ceil(end.y / colWidth),
+  };
+}
+
+export function pickByRect(layout: Layout, rect: GridRect, pickOption: 'include' | 'contain' = 'contain') {
+  return layout.filter(item => {
+    if (pickOption === 'include') {
+      return rect.x < item.x
+        && rect.y < item.y
+        && rect.right > item.x + item.w
+        && rect.bottom > item.y + item.h;
+    }
+
+    return rect.x < item.x + item.w
+      && rect.y < item.y + item.h
+      && rect.right > item.x
+      && rect.bottom > item.y
+  });
 }

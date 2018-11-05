@@ -1,9 +1,9 @@
 import React, { ReactChild } from 'react';
 import isEqual from 'lodash.isequal';
-import { synchronizeLayoutWithChildren, CompactType, getLayoutItem, cloneLayoutItem, moveElement, bottom } from '../utils';
+import { synchronizeLayoutWithChildren, CompactType, getLayoutItem, cloneLayoutItem, moveElement, bottom, pickByRect, getRectFromPoints } from '../utils';
 import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, GridResizeCallbacks } from './GridItem';
 import { DraggableData } from 'react-draggable';
-import Selection from './Selection';
+import Selection, { MousePosition } from './Selection';
 
 export interface LayoutItem {
   w: number;
@@ -32,6 +32,7 @@ export interface IGridLayoutState {
   oldLayout?: Layout | null;
   oldResizeItem?: LayoutItem | null;
   activeDrag?: LayoutItem | null;
+  selectedLayout?: Layout;
   maxZ: number;
   bottom: number;
 }
@@ -305,7 +306,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   onLayoutMaybeChanged(newLayout: Layout, oldLayout?: Layout | null) {
-    console.log('>>> onLayoutMaybeChanged', newLayout);
     if (!oldLayout) {
       oldLayout = this.state.layout;
     }
@@ -315,12 +315,16 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
 
-  startSelection(ev: React.MouseEvent) {
-    console.log('>> this.startSelection', ev);
-    this.setState({
+  selectLayoutItemByRect = (start?: MousePosition, end?: MousePosition) => {
+    if (!start || !end) {
+      return this.setState({ selectedLayout: [] });
+    }
 
-    })
-    return
+    const selectedLayout = pickByRect(
+      this.state.layout,
+      getRectFromPoints(start, end, this.calcColWidth(),),
+    );
+    this.setState({ selectedLayout });
   }
 
   processGridItem(child: ReactChild, colWidth: number) {
@@ -337,12 +341,14 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     if (!l) {
       return;
     }
-    const { mounted, props } = this;
+    const { mounted, props, state } = this;
 
     const {
       grid, containerPadding, maxRows, width,
       isDraggable, isResizable,
     } = props;
+
+    const { selectedLayout } = state;
 
     const rowHeight = grid[1];
     const cols = this.getCols();
@@ -354,6 +360,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       !l.static && isResizable && (l.isResizable || l.isResizable == null)
     );
 
+    const active = Boolean(selectedLayout && selectedLayout.find(item => item.i === String(key)));
     return <GridItem
       usePercentages={mounted}
       colWidth={colWidth}
@@ -377,6 +384,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       w={l.w}
       h={l.h}
       z={l.z}
+      active={active}
     >{child}</GridItem>
   }
 
@@ -431,11 +439,8 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     const { bottom } = this.state;
     const colWith = this.calcColWidth();
 
-    return <Selection>
-      <div
-        onMouseDown={this.startSelection}
-        style={{ width, height: (bottom + 10) * colWith }}
-      >
+    return <Selection onSelect={this.selectLayoutItemByRect}>
+      <div style={{ width, height: (bottom + 10) * colWith }}>
         {React.Children.map(this.props.children,
           child => this.processGridItem(child, colWith)
         )}

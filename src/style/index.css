@@ -30,6 +30,10 @@ body {
   transition-property: left, top;
 }
 
+.react-grid-item.active {
+  background: rgba(255, 0, 0, .15);
+}
+
 .react-grid-item.cssTransforms {
   transition-property: transform;
 }
@@ -88,4 +92,9 @@ body {
   left: 0;
   right: 20px;
   width: auto
+}
+
+.drawing-handler {
+  position: absolute;
+  border: 2px dashed #64b5f6;
 }

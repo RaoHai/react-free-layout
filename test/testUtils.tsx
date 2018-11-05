@@ -26,3 +26,21 @@ export function generateDOM(layouts: any[]) {
       </div>);
   });
 }
+
+export function mouseMove(x: number, y: number, node?: Element) {
+  const doc = node && node.ownerDocument || document;
+  const evt = doc.createEvent('MouseEvents');
+  evt.initMouseEvent('mousemove', true, true, window,
+      0, 0, 0, x, y, false, false, false, false, 0, null);
+  doc.dispatchEvent(evt);
+  return evt;
+}
+
+export function mouseUp(x: number, y: number, node?: Element) {
+  const doc = node && node.ownerDocument || document;
+  const evt = doc.createEvent('MouseEvents');
+  evt.initMouseEvent('mouseup', true, true, window,
+      0, 0, 0, x, y, false, false, false, false, 0, null);
+  doc.dispatchEvent(evt);
+  return evt;
+}

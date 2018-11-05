@@ -72,6 +72,7 @@ GridResizeCallbacks<GridResizeCallback>&
     style?: {};
     handle: string;
     cancel: string;
+    active?: boolean;
   }, {
   dragging: Pick<Position, 'left' | 'top'> | null;
   resizing: Position | null;
@@ -299,7 +300,7 @@ GridResizeCallbacks<GridResizeCallback>&
     const {
       margin, colWidth, containerPadding, rowHeight, isDraggable = true,
       x, y, w, h, z,
-      children, className, style,
+      children, className, style, active,
     } = this.props;
 
     const out = {
@@ -330,7 +331,8 @@ GridResizeCallbacks<GridResizeCallback>&
           resizing: Boolean(this.state.resizing),
           "react-draggable": isDraggable,
           "react-draggable-dragging": Boolean(this.state.dragging),
-        }
+          active: Boolean(active)
+        },
       ),
       // We can set the width and height on the child, but unfortunately we can't set the position.
       style: {
