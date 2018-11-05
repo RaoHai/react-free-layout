@@ -1,6 +1,6 @@
 import React, { ReactChild } from 'react';
 import isEqual from 'lodash.isequal';
-import { synchronizeLayoutWithChildren, CompactType, getLayoutItem, cloneLayoutItem, moveElement, bottom, pickByRect, getRectFromPoints } from '../utils';
+import { synchronizeLayoutWithChildren, CompactType, getLayoutItem, cloneLayoutItem, moveElement, bottom, pickByRect, getRectFromPoints, getBoundingRectFromLayout, noop } from '../utils';
 import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, GridResizeCallbacks } from './GridItem';
 import { DraggableData } from 'react-draggable';
 import Selection, { MousePosition } from './Selection';
@@ -32,12 +32,13 @@ export interface IGridLayoutState {
   oldLayout?: Layout | null;
   oldResizeItem?: LayoutItem | null;
   activeDrag?: LayoutItem | null;
+
+  selecting?: boolean;
   selectedLayout?: Layout;
+
   maxZ: number;
   bottom: number;
 }
-
-function noop() { return; }
 
 const defaultProps = {
   maxRows: Infinity,
@@ -314,9 +315,12 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     }
   }
 
+  startSelection = () => {
+    this.setState({ selecting: true });
+  }
 
   selectLayoutItemByRect = (start?: MousePosition, end?: MousePosition) => {
-    if (!start || !end) {
+    if (!this.state.selecting || !start || !end) {
       return this.setState({ selectedLayout: [] });
     }
 
@@ -325,6 +329,10 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       getRectFromPoints(start, end, this.calcColWidth(),),
     );
     this.setState({ selectedLayout });
+  }
+
+  endSelection = (start?: MousePosition, end?: MousePosition) => {
+    this.setState({ selecting: false });
   }
 
   processGridItem(child: ReactChild, colWidth: number) {
@@ -434,13 +442,57 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     );
   }
 
+  selectionPlaceHolder() {
+    const { selectedLayout, selecting } = this.state;
+    if (selecting || !selectedLayout || !selectedLayout.length) {
+      return null;
+    }
+    const rect = getBoundingRectFromLayout(selectedLayout);
+
+    const {
+      width,
+      containerPadding,
+      maxRows,
+      grid,
+    } = this.props;
+
+    return <GridItem
+      cols={this.getCols()}
+      colWidth={this.calcColWidth()}
+      x={rect.x}
+      y={rect.y}
+      w={rect.right - rect.x}
+      h={rect.bottom - rect.y}
+      i={'selection'}
+      className="react-selection-placeholder"
+      maxRows={maxRows}
+      rowHeight={grid[1]}
+      containerWidth={width}
+      containerPadding={containerPadding}
+      onDrag={noop}
+      onDragStart={noop}
+      onDragStop={noop}
+      onResize={noop}
+      onResizeStart={noop}
+      onResizeStop={noop}
+      margin={[0, 0]}
+    >
+      <div />
+    </GridItem>
+  }
+
   render() {
     const { width } = this.props;
     const { bottom } = this.state;
     const colWith = this.calcColWidth();
 
-    return <Selection onSelect={this.selectLayoutItemByRect}>
+    return <Selection
+      onSelectStart={this.startSelection}
+      onSelect={this.selectLayoutItemByRect}
+      onSelectEnd={this.endSelection}
+    >
       <div style={{ width, height: (bottom + 10) * colWith }}>
+        {this.selectionPlaceHolder()}
         {React.Children.map(this.props.children,
           child => this.processGridItem(child, colWith)
         )}

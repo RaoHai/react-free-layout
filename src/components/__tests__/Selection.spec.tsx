@@ -32,6 +32,6 @@ test('Selection', () => {
   expect((wrapper.state() as any).dragging).toEqual(false);
   expect((wrapper.state() as any).end).toBeNull();
 
-  expect(fn.mock.calls.length).toEqual(2);
-  expect(fn.mock.calls[1]).toEqual([ {"x": 10, "y": 10}, {"x": 110, "y": 210}, true ]);
+  expect(fn.mock.calls.length).toEqual(1);
+  expect(fn.mock.calls[0]).toEqual([ {"x": 10, "y": 10}, {"x": 110, "y": 210}, true ]);
 });

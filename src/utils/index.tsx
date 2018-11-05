@@ -11,6 +11,9 @@ export interface Position {
   height: number,
 };
 
+export function noop() { return; }
+
+
 export function synchronizeLayoutWithChildren(
   initialLayout: Layout,
   children: JSX.Element[] | JSX.Element,
@@ -281,4 +284,16 @@ export function pickByRect(layout: Layout, rect: GridRect, pickOption: 'include'
       && rect.right > item.x
       && rect.bottom > item.y
   });
+}
+
+export function getBoundingRectFromLayout(layout: Layout): GridRect {
+  let x: number = Infinity, y: number = Infinity, right: number = -Infinity, bottom: number = -Infinity;
+  layout.forEach(i => {
+    x = Math.min(i.x, x);
+    y = Math.min(i.y, y);
+    right = Math.max(i.x + i.w, right);
+    bottom = Math.max(i.y + i.h, bottom);
+  });
+
+  return { x, y, right, bottom }
 }

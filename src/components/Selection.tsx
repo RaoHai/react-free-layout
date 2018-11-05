@@ -1,5 +1,5 @@
 import React, { EventHandler } from 'react';
-import { getTouchIdentifier, getControlPosition } from '../utils/index';
+import { getTouchIdentifier, getControlPosition, noop } from '../utils/index';
 import { TouchEvent } from '../utils/events';
 import DisposableComponent from '../utils/disposable';
 
@@ -10,7 +10,9 @@ export interface MousePosition {
 
 export interface SelectionProps {
   offsetParent?: Element;
-  onSelect: (start?: MousePosition, end?: MousePosition, finished?: boolean) => void;
+  onSelect: (start?: MousePosition, end?: MousePosition) => void;
+  onSelectStart: (start?: MousePosition, end?:  MousePosition) => void;
+  onSelectEnd: (start?: MousePosition, end?: MousePosition) => void;
 }
 
 export interface SelectionState {
@@ -21,6 +23,11 @@ export interface SelectionState {
 }
 
 export default class Selection extends DisposableComponent<SelectionProps, SelectionState> {
+  static defaultProps = {
+    onSelectStart: noop,
+    onSelectEnd: noop,
+    onSelect: noop,
+  }
   private dragWrapper: Element | null = null;
 
   constructor(props: SelectionProps) {
@@ -47,6 +54,8 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
       start: position,
     });
 
+    this.props.onSelectStart(position, undefined);
+
     this.addEventListener('mousemove', this.moveSelection);
     this.addEventListener('mouseup', this.moveSelectionStop)
   }
@@ -65,7 +74,7 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     }
 
     if (position) {
-      this.props.onSelect(start, position, true);
+      this.props.onSelect(start, position);
     }
 
     this.setState({
@@ -82,9 +91,9 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
 
     const position = getControlPosition(e, touchIdentifier, this);
     if (position) {
-      this.props.onSelect(start, position, true);
+      this.props.onSelectEnd(start, position);
     } else {
-      this.props.onSelect(undefined, undefined, true);
+      this.props.onSelectEnd(undefined, undefined);
     }
     this.setState({ dragging: false, start: null, end: null });
 
