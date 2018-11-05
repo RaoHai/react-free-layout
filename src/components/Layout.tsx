@@ -1,8 +1,9 @@
 import React, { ReactChild } from 'react';
 import isEqual from 'lodash.isequal';
-import { synchronizeLayoutWithChildren, CompactType, getLayoutItem, cloneLayoutItem, moveElement } from '../utils';
+import { synchronizeLayoutWithChildren, CompactType, getLayoutItem, cloneLayoutItem, moveElement, bottom } from '../utils';
 import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, GridResizeCallbacks } from './GridItem';
 import { DraggableData } from 'react-draggable';
+import Selection from './Selection';
 
 export interface LayoutItem {
   w: number;
@@ -26,11 +27,13 @@ export type Layout = LayoutItem[];
 export interface IGridLayoutState {
   layout: Layout;
   mounted: boolean;
+  focusItem?: LayoutItem | null;
   oldDragItem?: LayoutItem | null;
   oldLayout?: Layout | null;
   oldResizeItem?: LayoutItem | null;
   activeDrag?: LayoutItem | null;
   maxZ: number;
+  bottom: number;
 }
 
 function noop() { return; }
@@ -47,6 +50,7 @@ const defaultProps = {
   onResizeStop: noop,
   isDraggable: true,
   isResizable: true,
+  onLayoutChange: () => {},
 }
 
 
@@ -146,9 +150,11 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       return;
     }
 
+    const dragItem = cloneLayoutItem(l);
     this.setState({
-      oldDragItem: cloneLayoutItem(l),
-      oldLayout: this.state.layout
+      oldDragItem: dragItem,
+      oldLayout: this.state.layout,
+      focusItem: dragItem,
     });
 
     return this.props.onDragStart(layout, l, l, null, e, node);
@@ -228,7 +234,8 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       activeDrag: null,
       layout,
       oldDragItem: undefined,
-      oldLayout: undefined
+      oldLayout: undefined,
+      bottom: bottom(layout),
     });
 
     this.onLayoutMaybeChanged(layout, oldLayout);
@@ -290,13 +297,15 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       activeDrag: null,
       layout,
       oldResizeItem: null,
-      oldLayout: null
+      oldLayout: null,
+      bottom: bottom(layout),
     });
 
     this.onLayoutMaybeChanged(layout, oldLayout);
   }
 
   onLayoutMaybeChanged(newLayout: Layout, oldLayout?: Layout | null) {
+    console.log('>>> onLayoutMaybeChanged', newLayout);
     if (!oldLayout) {
       oldLayout = this.state.layout;
     }
@@ -306,7 +315,15 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
 
-  processGridItem(child: ReactChild) {
+  startSelection(ev: React.MouseEvent) {
+    console.log('>> this.startSelection', ev);
+    this.setState({
+
+    })
+    return
+  }
+
+  processGridItem(child: ReactChild, colWidth: number) {
     if (!child || !React.isValidElement(child)) {
       return;
     }
@@ -339,7 +356,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     return <GridItem
       usePercentages={mounted}
-      colWidth={this.calcColWidth()}
+      colWidth={colWidth}
       rowHeight={rowHeight}
       margin={[0, 0]}
       containerPadding={containerPadding}
@@ -410,11 +427,20 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   render() {
-    return <div>
-      {React.Children.map(this.props.children,
-        child => this.processGridItem(child)
-      )}
-      {this.placeholder()}
-    </div>
+    const { width } = this.props;
+    const { bottom } = this.state;
+    const colWith = this.calcColWidth();
+
+    return <Selection>
+      <div
+        onMouseDown={this.startSelection}
+        style={{ width, height: (bottom + 10) * colWith }}
+      >
+        {React.Children.map(this.props.children,
+          child => this.processGridItem(child, colWith)
+        )}
+        {this.placeholder()}
+      </div>
+    </Selection>
   }
 }

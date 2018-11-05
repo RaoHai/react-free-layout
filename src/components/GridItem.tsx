@@ -337,7 +337,7 @@ GridResizeCallbacks<GridResizeCallback>&
         ...style,
         ...child.props.style,
         ...setTransform(out, z),
-      }
+      },
     });
 
     newChild = this.mixinResizable(newChild, position);

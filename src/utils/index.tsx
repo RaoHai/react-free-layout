@@ -1,5 +1,7 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { Layout, LayoutItem } from '../components/Layout';
+import Selection from '../components/Selection';
 
 export type CompactType = 'horizontal' | 'vertical';
 export interface Position {
@@ -17,6 +19,7 @@ export function synchronizeLayoutWithChildren(
 ): {
   layout: Layout;
   maxZ: number;
+  bottom: number;
 } {
   let layout: Layout = initialLayout;
   let maxZ = -Infinity;
@@ -39,6 +42,7 @@ export function synchronizeLayoutWithChildren(
   return {
     layout,
     maxZ,
+    bottom: bottom(layout),
   }
 }
 
@@ -182,4 +186,63 @@ export function moveElement(
   l.moved = true;
 
   return layout;
+}
+
+export type MouseTouchEvent = React.TouchEvent & TouchEvent;
+export function getTouchIdentifier(e: MouseTouchEvent): number {
+  if (e.targetTouches && e.targetTouches[0]) {
+    return e.targetTouches[0].identifier;
+  }
+  if (e.changedTouches && e.changedTouches[0]) {
+    return e.changedTouches[0].identifier;
+  }
+
+  return 0;
+}
+
+export interface ArrayLike<T> {
+  [index: number]: T;
+  length: number;
+}
+
+function findInArray<T>(array: ArrayLike<T>, iter: (i: T) => boolean): T | null {
+  for (let i = 0; i < array.length; i++) {
+    if (iter(array[i])) {
+      return array[i];
+    }
+  }
+  return null;
+}
+
+export function getTouch(e: React.TouchEvent, identifier: number): { clientX: number, clientY: number } | null {
+  return (e.targetTouches && findInArray(e.targetTouches, t => identifier === t.identifier)) ||
+         (e.changedTouches && findInArray(e.changedTouches, t => identifier === t.identifier));
+}
+
+export function getControlPosition(
+  e: React.TouchEvent,
+  identifier: number,
+  selection: Selection,
+) {
+  const touchObj = typeof identifier === 'number' ? getTouch(e, identifier) : null;
+  const node = ReactDOM.findDOMNode(selection) as HTMLElement;
+  if (!node) {
+    return null;
+  }
+
+  const offsetParent = selection.props.offsetParent ||
+    node.offsetParent ||
+    (node.ownerDocument && node.ownerDocument.body) || document.body;
+
+  return offsetXYFromParent(touchObj || e as any, offsetParent);
+}
+
+export function offsetXYFromParent(evt: { clientX: number, clientY: number }, offsetParent: Element) {
+  const isBody = offsetParent === (offsetParent.ownerDocument && offsetParent.ownerDocument.body);
+  const offsetParentRect = isBody ? {left: 0, top: 0} : offsetParent.getBoundingClientRect();
+
+  const x = evt.clientX + offsetParent.scrollLeft - offsetParentRect.left;
+  const y = evt.clientY + offsetParent.scrollTop - offsetParentRect.top;
+
+  return { x, y };
 }
