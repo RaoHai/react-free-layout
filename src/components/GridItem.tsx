@@ -41,13 +41,11 @@ export type GridResizeCallback = (
   axis: Axis,
 ) => void;
 
-
 export interface GridDragCallbacks<T> {
   onDragStart: T;
   onDrag: T;
   onDragStop: T;
 }
-
 export interface GridResizeCallbacks<T> {
   onResize: T;
   onResizeStart: T;
@@ -55,7 +53,16 @@ export interface GridResizeCallbacks<T> {
 }
 
 type Axis = 'both' | 'x' | 'y' | 'none';
-
+const handles = [
+  { key: 'tl', type: 'both'},
+  { key: 'tr', type: 'both'},
+  { key: 'bl', type: 'both'},
+  { key: 'br', type: 'both'},
+  { key: 'top', type: 'y', },
+  { key: 'left', type: 'x' },
+  { key: 'right', type: 'x'},
+  { key: 'bottom',type: 'x', },
+];
 export default class GridItem extends Component<
 GridDragCallbacks<GridDragCallback> &
 GridResizeCallbacks<GridResizeCallback>&
@@ -250,7 +257,7 @@ GridResizeCallbacks<GridResizeCallback>&
     child: React.ReactElement<any>,
     position: Position,
   ): React.ReactElement<any> {
-    const { cols, x, minW = 0, minH = 0, maxW = Infinity, maxH = Infinity} = this.props;
+    const { cols, x, minW = 0, minH = 0, maxW = Infinity, maxH = Infinity } = this.props;
 
     // This is the max possible width - doesn't go to infinity because of the width of the window
     const maxWidth = this.calcPosition(0, 0, cols - x, 0).width;
@@ -272,6 +279,7 @@ GridResizeCallbacks<GridResizeCallback>&
         onResizeStop={this.onResizeHandler("onResizeStop")}
         onResizeStart={this.onResizeHandler("onResizeStart")}
         onResize={this.onResizeHandler("onResize")}
+        handles={handles}
       >
         {child}
       </Resizable>

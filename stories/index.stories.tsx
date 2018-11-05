@@ -2,7 +2,7 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { generateLayout, generateDOM } from '../test/testUtils';
 import Layout from '../src/components/Layout';
-import '../src/style/index.css';
+import '../src/style/index.less';
 
 const layout = generateLayout();
 

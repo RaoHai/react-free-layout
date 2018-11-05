@@ -209,7 +209,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       isUserAction,
       cols
     );
-
     if (oldDragItem) {
       this.props.onDrag(layout, oldDragItem, l, placeholder, e, node);
     }

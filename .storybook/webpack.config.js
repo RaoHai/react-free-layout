@@ -5,6 +5,10 @@ module.exports = (baseConfig, env, config) => {
     test: /\.(ts|tsx)$/,
     loader: require.resolve("ts-loader")
   });
+  config.module.rules.push({
+    test: /\.less$/,
+    loaders: [ 'style-loader', 'css-loader', 'less-loader' ]
+  });
   config.plugins.push(new TSDocgenPlugin()); // optional
   config.resolve.extensions.push(".ts", ".tsx");
   return config;
