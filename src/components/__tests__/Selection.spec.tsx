@@ -4,9 +4,12 @@ import { mouseMove, mouseUp } from '../../../test/testUtils';
 import Selection from '../Selection';
 
 test('Selection', () => {
-  const fn = jest.fn();
+  const selectfn = jest.fn();
+  const selectEndFn = jest.fn();
+
   const wrapper = mount(<Selection
-    onSelect={fn}
+    onSelect={selectfn}
+    onSelectEnd={selectEndFn}
   >
     <div />
   </Selection>);
@@ -32,6 +35,9 @@ test('Selection', () => {
   expect((wrapper.state() as any).dragging).toEqual(false);
   expect((wrapper.state() as any).end).toBeNull();
 
-  expect(fn.mock.calls.length).toEqual(1);
-  expect(fn.mock.calls[0]).toEqual([ {"x": 10, "y": 10}, {"x": 110, "y": 210}, true ]);
+  expect(selectfn.mock.calls.length).toEqual(1);
+  expect(selectfn.mock.calls[0]).toEqual([ {"x": 10, "y": 10}, {"x": 100, "y": 200} ]);
+
+  expect(selectEndFn.mock.calls.length).toEqual(1);
+  expect(selectEndFn.mock.calls[0]).toEqual([ {"x": 10, "y": 10}, {"x": 110, "y": 210} ]);
 });

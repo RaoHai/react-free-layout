@@ -333,6 +333,15 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
   endSelection = (start?: MousePosition, end?: MousePosition) => {
     this.setState({ selecting: false });
+    this.addTemporaryGroup(this.state.selectedLayout);
+  }
+
+  addTemporaryGroup = (selectedLayout?: Layout) => {
+    if (!selectedLayout) {
+      return;
+    }
+
+
   }
 
   processGridItem(child: ReactChild, colWidth: number) {
