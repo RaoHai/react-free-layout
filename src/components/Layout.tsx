@@ -19,7 +19,7 @@ import { DraggableData } from 'react-draggable';
 import Selection, { MousePosition } from './Selection';
 import { ResizeCallbacks, ResizeProps } from './Resizable/index';
 
-const temporaryGroupId = Symbol('template');
+export const temporaryGroupId = Symbol('template');
 export interface LayoutItem {
   w: number;
   h: number;
