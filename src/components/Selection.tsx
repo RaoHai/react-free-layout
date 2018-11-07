@@ -11,7 +11,7 @@ export interface MousePosition {
 export interface SelectionProps {
   offsetParent?: Element;
   onSelect: (start?: MousePosition, end?: MousePosition) => void;
-  onSelectStart: (start?: MousePosition, end?:  MousePosition) => void;
+  onSelectStart: (start?: MousePosition, end?: MousePosition) => void;
   onSelectEnd: (start?: MousePosition, end?: MousePosition) => void;
 }
 

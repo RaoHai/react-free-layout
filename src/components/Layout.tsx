@@ -11,11 +11,13 @@ import {
   getRectFromPoints,
   getBoundingRectFromLayout,
   noop,
+  GridRect,
 } from '../utils';
 
-import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, GridResizeCallbacks } from './GridItem';
+import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, Axis } from './GridItem';
 import { DraggableData } from 'react-draggable';
 import Selection, { MousePosition } from './Selection';
+import { ResizeCallbacks, ResizeProps } from './Resizable/index';
 
 const temporaryGroupId = Symbol('template');
 export interface LayoutItem {
@@ -23,7 +25,7 @@ export interface LayoutItem {
   h: number;
   x: number;
   y: number;
-  i: string;
+  i: string | symbol;
   z?: number;
   minW?: number;
   minH?: number;
@@ -77,7 +79,7 @@ export type GridDragEventCallback = (
   item?: LayoutItem | null,
   lastItem?: LayoutItem | null,
   placeholder?: LayoutItem | null,
-  e?: MouseEvent,
+  e?: React.SyntheticEvent<MouseEvent> ,
   node?: DraggableData['node'],
 ) => void;
 
@@ -86,7 +88,7 @@ export type GridResizeEventCallback = (
   item?: LayoutItem | null,
   lastItem?: LayoutItem | null,
   placeholder?: LayoutItem | null,
-  e?: MouseEvent,
+  e?: React.SyntheticEvent<MouseEvent> ,
   node?: DraggableData['node'],
 ) => void;
 
@@ -107,7 +109,7 @@ export type IGridLayoutProps = {
   isResizable?: boolean;
   onLayoutChange: (layout: Layout) => void;
 } & GridDragCallbacks<GridDragEventCallback>
-& GridResizeCallbacks<GridResizeEventCallback>
+& ResizeCallbacks<GridResizeEventCallback>
 export default class DeerGridLayout extends React.Component<IGridLayoutProps, IGridLayoutState> {
   public static defaultProps: Partial<IGridLayoutProps> = defaultProps;
   private mounted = false;
@@ -259,7 +261,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     this.onLayoutMaybeChanged(layout, oldLayout);
   }
 
-  onResizeStart = (i: string, w: number, h: number, { e, node }: GridResizeEvent) => {
+  onResizeStart = (i: string, { x, y, w, h }: ResizeProps, { e, node }: GridResizeEvent) => {
     const { layout } = this.state;
     const l = getLayoutItem(layout, i);
     if (!l) {
@@ -274,7 +276,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     this.props.onResizeStart(layout, l, l, null, e, node);
   }
 
-  onResize = (i: string, w: number, h: number, { e, node }: GridResizeEvent) => {
+  onResize = (i: string, { w, h, x, y }: ResizeProps, { e, node }: GridResizeEvent, axis: Axis) => {
     const { layout, oldResizeItem } = this.state;
     const l = getLayoutItem(layout, i);
     if (!l) {
@@ -283,6 +285,8 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     l.w = w;
     l.h = h;
+    l.x = x;
+    l.y = y;
 
     // Create placeholder element (display only)
     const placeholder = {
@@ -304,7 +308,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     });
   }
 
-  onResizeStop = (i: string, w: number, h: number, { e, node }: GridResizeEvent) => {
+  onResizeStop = (i: string, { x, y, w, h }: ResizeProps, { e, node }: GridResizeEvent) => {
     const { layout, oldResizeItem, oldLayout } = this.state;
     const l = getLayoutItem(layout, i);
 
@@ -332,7 +336,12 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   startSelection = () => {
-    this.setState({ selecting: true });
+    this.setState(({ group }) => ({
+      selecting: true,
+      activeDrag: null,
+      selectedLayout: [],
+      group: (delete group[temporaryGroupId] && group)
+    }))
   }
 
   selectLayoutItemByRect = (start?: MousePosition, end?: MousePosition) => {
@@ -342,24 +351,38 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     const selectedLayout = pickByRect(
       this.state.layout,
-      getRectFromPoints(start, end, this.calcColWidth(),),
+      getRectFromPoints(start, end, this.calcColWidth()),
     );
     this.setState({ selectedLayout });
   }
 
-  endSelection = () => {
+  endSelection = (start?: MousePosition, end?: MousePosition) => {
     this.setState({ selecting: false });
-    this.addTemporaryGroup(this.state.selectedLayout);
+    if (start && end && this.state.selectedLayout) {
+      this.addTemporaryGroup(
+        this.state.selectedLayout,
+        getRectFromPoints(start, end, this.calcColWidth()),
+      );
+    }
   }
 
-  addTemporaryGroup = (selectedLayout?: Layout) => {
+  addTemporaryGroup = (selectedLayout: Layout, rect: GridRect) => {
     if (!selectedLayout) {
       return;
     }
 
     const group = { ...this.state.group };
     group[temporaryGroupId] = selectedLayout;
-    this.setState({ group });
+    this.setState({
+      group,
+      activeDrag: {
+        x: rect.x,
+        y: rect.y,
+        w: rect.right - rect.x,
+        h: rect.bottom - rect.y,
+        i: temporaryGroupId,
+      },
+    });
   }
 
   processGridItem(child: ReactChild, colWidth: number) {
@@ -379,13 +402,12 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     const { mounted, props, state } = this;
 
     const {
-      grid, containerPadding, maxRows, width,
+      containerPadding, maxRows, width,
       isDraggable, isResizable,
     } = props;
 
-    const { selectedLayout } = state;
+    const { selectedLayout, activeDrag } = state;
 
-    const rowHeight = grid[1];
     const cols = this.getCols();
 
     const draggable = Boolean(
@@ -395,11 +417,13 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       !l.static && isResizable && (l.isResizable || l.isResizable == null)
     );
 
-    const active = Boolean(selectedLayout && selectedLayout.find(item => item.i === String(key)));
+    const active = activeDrag && activeDrag.i === String(key);
+    const selected = Boolean(selectedLayout && selectedLayout.find(item => item.i === String(key)));
+
     return <GridItem
       usePercentages={mounted}
       colWidth={colWidth}
-      rowHeight={rowHeight}
+      rowHeight={colWidth}
       margin={[0, 0]}
       containerPadding={containerPadding}
       containerWidth={width}
@@ -419,25 +443,24 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       w={l.w}
       h={l.h}
       z={l.z}
-      active={active}
+      active={!!active}
+      selected={selected}
     >{child}</GridItem>
   }
 
   placeholder() {
     const activeDrag = this.props.activeDrag || this.state.activeDrag;
-    if (!activeDrag) {
+    if (!activeDrag || activeDrag.i === temporaryGroupId) {
       return null;
     }
     const {
       width,
       containerPadding,
       maxRows,
-      grid,
     } = this.props;
 
     const cols = this.getCols();
     const margin = [0, 0];
-    const rowHeight = grid[1];
     // {...this.state.activeDrag} is pretty slow, actually
     return (
       <GridItem
@@ -453,7 +476,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         margin={[0, 0]}
         containerPadding={containerPadding || margin}
         maxRows={maxRows}
-        rowHeight={rowHeight}
+        rowHeight={this.calcColWidth()}
         isDraggable={false}
         isResizable={false}
         colWidth={this.calcColWidth()}
@@ -470,14 +493,13 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   groupPlaceholder() {
-
-
-    const { selecting, group } = this.state;
-
+    const { selecting, group, activeDrag } = this.state;
     const selectedLayout = group[temporaryGroupId];
+
     if (selecting || !selectedLayout || !selectedLayout.length) {
       return null;
     }
+
     const rect = getBoundingRectFromLayout(selectedLayout);
 
     const {
@@ -507,6 +529,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onResizeStart={noop}
       onResizeStop={noop}
       margin={[0, 0]}
+      active={Boolean(activeDrag && activeDrag.i === temporaryGroupId)}
     >
       <div />
     </GridItem>

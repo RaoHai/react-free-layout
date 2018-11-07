@@ -1,18 +1,19 @@
 import React, { Component } from 'react';
 import { DraggableCore, DraggableData } from 'react-draggable';
-import { Resizable } from '@alipay/deer-react-resizable';
 import classNames from 'classnames';
 import { LayoutItem } from './Layout';
 import { setTransform } from '../utils';
+import Resizable, { ResizeCallbacks, ResizeCallback, ResizeProps } from './Resizable/index';
 
 export interface GridDragEvent {
-  e: MouseEvent;
+  e: React.SyntheticEvent<MouseEvent>;
   node: DraggableData['node'];
-  newPosition: { x: number; y: number };
+  newPosition: { x: number; y: number, };
 }
 
 export interface GridResizeEvent {
-  e: MouseEvent;
+  e: React.SyntheticEvent<MouseEvent>;
+  axis?: {};
   node: DraggableData['node'];
   size: Position;
 }
@@ -21,7 +22,9 @@ export interface Position {
   left: number;
   top: number;
   width: number;
-  height: number
+  height: number;
+  deltaX?: number;
+  deltaY?: number;
 }
 
 export type GridDragCallback = (
@@ -31,41 +34,27 @@ export type GridDragCallback = (
   event: GridDragEvent,
 ) => void;
 
-export type CallbackItem = { e: MouseEvent; node: DraggableData['node']; size: Position };
-
-export type GridResizeCallback = (
-  i: string,
-  w: number,
-  h: number,
-  ev: CallbackItem,
-  axis: Axis,
-) => void;
-
 export interface GridDragCallbacks<T> {
   onDragStart: T;
   onDrag: T;
   onDragStop: T;
 }
-export interface GridResizeCallbacks<T> {
-  onResize: T;
-  onResizeStart: T;
-  onResizeStop: T;
+
+export type Axis = {
+  key: string;
+  direction: (0 | -1 | 1)[];
 }
 
-type Axis = 'both' | 'x' | 'y' | 'none';
-const handles = [
-  { key: 'tl', type: 'both'},
-  { key: 'tr', type: 'both'},
-  { key: 'bl', type: 'both'},
-  { key: 'br', type: 'both'},
-  { key: 'top', type: 'y', },
-  { key: 'left', type: 'x' },
-  { key: 'right', type: 'x'},
-  { key: 'bottom',type: 'x', },
-];
+export type GridResizeCallback = (
+  i: string,
+  size: ResizeProps,
+  ev: GridResizeEvent,
+  axis: Axis,
+) => void;
+
 export default class GridItem extends Component<
 GridDragCallbacks<GridDragCallback> &
-GridResizeCallbacks<GridResizeCallback>&
+ResizeCallbacks<GridResizeCallback>&
   LayoutItem & {
     className?: string;
     cols: number;
@@ -80,9 +69,15 @@ GridResizeCallbacks<GridResizeCallback>&
     handle: string;
     cancel: string;
     active?: boolean;
+    selected?: boolean;
   }, {
-  dragging: Pick<Position, 'left' | 'top'> | null;
-  resizing: Position | null;
+    lastX: number;
+    lastY: number;
+    dragging: Pick<Position, 'left' | 'top'> | null;
+    originPosition: Position | null;
+    originLayout: Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'> | null;
+    resizingPosition: Position | null;
+    resizingLayout: Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'> | null;
 }> {
   static defaultProps = {
     cancel: "",
@@ -92,12 +87,17 @@ GridResizeCallbacks<GridResizeCallback>&
   constructor(props: GridItem['props']) {
     super(props);
     this.state = {
+      lastX: 0,
+      lastY: 0,
       dragging: null,
-      resizing: null,
+      originPosition: null,
+      originLayout: null,
+      resizingPosition: null,
+      resizingLayout: null,
     };
   }
 
-  calcXY(top: number, left: number): { x: number, y: number } {
+  calcXY(top: number, left: number, suppliter = Math.round): { x: number, y: number } {
     const { margin, cols, colWidth, rowHeight, w, h, maxRows } = this.props;
 
     // left = colWidth * x + margin * (x + 1)
@@ -107,8 +107,8 @@ GridResizeCallbacks<GridResizeCallback>&
     // l - m = x(c + m)
     // (l - m) / (c + m) = x
     // x = (left - margin) / (coldWidth + margin)
-    let x = Math.round((left - margin[0]) / (colWidth + margin[0]));
-    let y = Math.round((top - margin[1]) / (rowHeight + margin[1]));
+    let x = suppliter((left - margin[0]) / (colWidth + margin[0]));
+    let y = suppliter((top - margin[1]) / (rowHeight + margin[1]));
 
     // Capping
     x = Math.max(Math.min(x, cols - w), 0);
@@ -122,13 +122,14 @@ GridResizeCallbacks<GridResizeCallback>&
     y: number,
     w: number,
     h: number,
-    state?: GridItem['state']
+    state?: GridItem['state'],
+    suppliter = Math.round
   ): Position {
     const { margin, containerPadding, colWidth, rowHeight } = this.props;
 
     const out = {
-      left: Math.round((colWidth + margin[0]) * x + containerPadding[0]),
-      top: Math.round((rowHeight + margin[1]) * y + containerPadding[1]),
+      left: suppliter((colWidth + margin[0]) * x + containerPadding[0]),
+      top: suppliter((rowHeight + margin[1]) * y + containerPadding[1]),
       // 0 * Infinity === NaN, which causes problems with resize constraints;
       // Fix this if it occurs.
       // Note we do it here rather than later because Math.round(Infinity) causes deopt
@@ -142,21 +143,23 @@ GridResizeCallbacks<GridResizeCallback>&
           : Math.round(rowHeight * h + Math.max(0, h - 1) * margin[1])
     };
 
-    if (state && state.resizing) {
-      out.width = Math.round(state.resizing.width);
-      out.height = Math.round(state.resizing.height);
+    if (state && state.resizingPosition) {
+      out.width = Math.round(state.resizingPosition.width);
+      out.height = Math.round(state.resizingPosition.height);
+      out.top = suppliter(state.resizingPosition.top);
+      out.left = suppliter(state.resizingPosition.left);
     }
 
     if (state && state.dragging) {
-      out.top = Math.round(state.dragging.top);
-      out.left = Math.round(state.dragging.left);
+      out.top = suppliter(state.dragging.top);
+      out.left = suppliter(state.dragging.left);
     }
 
     return out;
   }
 
   onDragHandler(handlerName: keyof GridDragCallbacks<GridDragCallback>) {
-    return (e: Event, { node, deltaX, deltaY }: DraggableData) => {
+    return (e: React.SyntheticEvent<MouseEvent>, { node, deltaX, deltaY }: DraggableData) => {
       const handler = this.props[handlerName];
       if (!handler) {
         return;
@@ -210,14 +213,15 @@ GridResizeCallbacks<GridResizeCallback>&
 
   calcWH(
     { height, width }: Pick<Position, 'width' | 'height'>,
+    suppliter = Math.round
   ): { w: number; h: number } {
     const { margin, maxRows, colWidth, cols, rowHeight, x, y } = this.props;
 
     // width = colWidth * w - (margin * (w - 1))
     // ...
     // w = (width + margin) / (colWidth + margin)
-    let w = Math.round((width + margin[0]) / (colWidth + margin[0]));
-    let h = Math.round((height + margin[1]) / (rowHeight + margin[1]));
+    let w = suppliter((width + margin[0]) / (colWidth + margin[0]));
+    let h = suppliter((height + margin[1]) / (rowHeight + margin[1]));
 
     // Capping
     w = Math.max(Math.min(w, cols - x), 0);
@@ -225,31 +229,91 @@ GridResizeCallbacks<GridResizeCallback>&
     return { w, h };
   }
 
-  onResizeHandler(handlerName: keyof GridResizeCallbacks<GridResizeCallback>) {
-    return (
-      e: MouseEvent,
-      {node, size, axis} : {node: HTMLElement, size: Position, axis: Axis }
-    ) => {
+  onResizeHandler(handlerName: keyof ResizeCallbacks<ResizeCallback>): ResizeCallback {
+    return (e, { node, size, axis }) => {
       if (!this.props[handlerName]) {
         return;
       }
+
       e.preventDefault();
-      const {cols, x, i, maxW = Infinity, minW = 0, maxH = Infinity, minH = 0 } = this.props;
 
-      // Get new XY
-      let { w, h } = this.calcWH(size);
+      let { i, x, y, w, h } = this.props;
 
-      // Cap w at numCols
-      w = Math.min(w, cols - x);
-      // Ensure w is at least 1
-      w = Math.max(w, 1);
+      const {
+        deltaX,
+        deltaY,
+        lastX,
+        lastY,
+        x: cX,
+        y: cY,
+       } = size;
+      let layout = { x, y, w, h };
 
-      w = Math.max(Math.min(w, maxW), minW);
-      h = Math.max(Math.min(h, maxH), minH);
 
-      this.setState({ resizing: handlerName === 'onResizeStop' ? null : size });
+      if (handlerName === 'onResizeStart') {
+        const position = this.calcPosition(x, y, w, h);
+        size = position;
+        this.setState({
+          lastX,
+          lastY,
+          originLayout: layout,
+          originPosition: this.calcPosition(x, y, w, h),
+        });
+      }
 
-      return this.props[handlerName](i, w, h, { e, node, size }, axis);
+      const { resizingPosition, originLayout, resizingLayout, originPosition } = this.state;
+      if (handlerName === 'onResize' && originLayout && originPosition && resizingPosition && resizingLayout) {
+        const { direction } = axis;
+        let {
+          x: resizingX,
+          // w: resizingW,
+          y: resizingY,
+          // h: resizingH,
+        } = resizingLayout;
+
+
+        let width = resizingPosition.width;
+        let height = resizingPosition.height;
+
+        if (direction[0] === -1) {
+          const dx = Math.round((cX - this.state.lastX) / this.props.colWidth) * this.props.colWidth;
+          const _w = originPosition.width - dx;
+          const right = originPosition.left + originPosition.width;
+          const _x = right - _w;
+          width = _w;
+          resizingX = Math.round(_x / this.props.colWidth);
+          x = resizingX;
+        } else {
+          width += direction[0] * deltaX;
+        }
+
+        if (direction[1] === -1) {
+          const dy = Math.round((cY - this.state.lastY) / this.props.rowHeight) * this.props.rowHeight;
+          const _h = originPosition.height - dy;
+          const bottom = originPosition.top + originPosition.height;
+          const _y = bottom - _h;
+          height = _h;
+          resizingY = Math.round(_y / this.props.rowHeight);
+          y = resizingY;
+        } else {
+          height += direction[1] * deltaY;
+        }
+
+        const { w: _w, h: _h } = this.calcWH({ width, height });
+
+        size = this.calcPosition(resizingX, resizingY, _w, _h);
+
+        w = _w;
+        h = _h;
+        layout = { x, y, w: _w, h: _h };
+      }
+
+      this.setState({
+        resizingPosition: handlerName === 'onResizeStop' ? null : size,
+        resizingLayout: handlerName === 'onResizeStop' ? null : layout,
+      });
+
+      return this.props[handlerName](String(i), { x, y, w, h }, { e, node, size }, axis);
     };
   }
 
@@ -257,29 +321,17 @@ GridResizeCallbacks<GridResizeCallback>&
     child: React.ReactElement<any>,
     position: Position,
   ): React.ReactElement<any> {
-    const { cols, x, minW = 0, minH = 0, maxW = Infinity, maxH = Infinity } = this.props;
 
-    // This is the max possible width - doesn't go to infinity because of the width of the window
-    const maxWidth = this.calcPosition(0, 0, cols - x, 0).width;
-
-    // Calculate min/max constraints using our min & maxes
-    const mins = this.calcPosition(0, 0, minW, minH);
-    const maxes = this.calcPosition(0, 0, maxW, maxH);
-    const minConstraints = [mins.width, mins.height];
-    const maxConstraints = [
-      Math.min(maxes.width, maxWidth),
-      Math.min(maxes.height, Infinity)
-    ];
     return (
       <Resizable
+        key={String(this.props.i)}
+        left={position.left}
+        top={position.top}
         width={position.width}
         height={position.height}
-        minConstraints={minConstraints}
-        maxConstraints={maxConstraints}
         onResizeStop={this.onResizeHandler("onResizeStop")}
         onResizeStart={this.onResizeHandler("onResizeStart")}
         onResize={this.onResizeHandler("onResize")}
-        handles={handles}
       >
         {child}
       </Resizable>
@@ -308,7 +360,7 @@ GridResizeCallbacks<GridResizeCallback>&
     const {
       margin, colWidth, containerPadding, rowHeight, isDraggable = true,
       x, y, w, h, z,
-      children, className, style, active,
+      children, className, style, active, selected,
     } = this.props;
 
     const out = {
@@ -336,10 +388,11 @@ GridResizeCallbacks<GridResizeCallback>&
         className,
         {
           static: this.props.static,
-          resizing: Boolean(this.state.resizing),
+          resizing: Boolean(this.state.resizingPosition),
           "react-draggable": isDraggable,
           "react-draggable-dragging": Boolean(this.state.dragging),
-          active: Boolean(active)
+          active: Boolean(active),
+          selected: Boolean(selected),
         },
       ),
       // We can set the width and height on the child, but unfortunately we can't set the position.
