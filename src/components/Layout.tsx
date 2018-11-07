@@ -175,7 +175,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     this.setState({
       oldDragItem: dragItem,
       oldLayout: this.state.layout,
-      focusItem: dragItem,
     });
 
     return this.props.onDragStart(layout, l, l, null, e, node);
@@ -229,12 +228,10 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   onDragStop = (i: string, x: number, y: number, { e, node }: GridDragEvent) => {
     const { oldDragItem } = this.state;
     let { layout } = this.state;
-
     const l = getLayoutItem(layout, i);
     if (!l) {
       return;
     }
-
     // Move the element here
     const isUserAction = true;
     layout = moveElement(
@@ -326,10 +323,31 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     this.onLayoutMaybeChanged(layout, oldLayout);
   }
 
+  mergeLayout(newLayout: Layout, extraValue = {}) {
+    const { layout } = this.state;
+
+    if (!newLayout || !newLayout.length) {
+      return layout;
+    }
+
+    return layout.map(item => {
+      const found = newLayout.find(n => n.i === item.i);
+      if (found) {
+        return {
+          ...item,
+          ...found,
+          ...extraValue,
+        };
+      }
+      return item;
+    });
+  }
+
   onLayoutMaybeChanged(newLayout: Layout, oldLayout?: Layout | null) {
     if (!oldLayout) {
       oldLayout = this.state.layout;
     }
+
     if (!isEqual(oldLayout, newLayout)) {
       this.props.onLayoutChange(newLayout);
     }
@@ -338,7 +356,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   startSelection = () => {
     this.setState(({ group }) => ({
       selecting: true,
-      activeDrag: null,
+      focusItem: null,
       selectedLayout: [],
       group: (delete group[temporaryGroupId] && group)
     }))
@@ -375,14 +393,16 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     group[temporaryGroupId] = selectedLayout;
     this.setState({
       group,
-      activeDrag: {
+      focusItem: {
         x: rect.x,
         y: rect.y,
         w: rect.right - rect.x,
         h: rect.bottom - rect.y,
         i: temporaryGroupId,
       },
-    });
+    }, () => this.onLayoutMaybeChanged(
+      this.mergeLayout(selectedLayout, { parent: temporaryGroupId })
+    ));
   }
 
   processGridItem(child: ReactChild, colWidth: number) {
@@ -406,7 +426,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       isDraggable, isResizable,
     } = props;
 
-    const { selectedLayout, activeDrag } = state;
+    const { selectedLayout, focusItem } = state;
 
     const cols = this.getCols();
 
@@ -417,7 +437,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       !l.static && isResizable && (l.isResizable || l.isResizable == null)
     );
 
-    const active = activeDrag && activeDrag.i === String(key);
+    const active = focusItem && focusItem.i === String(key);
     const selected = Boolean(selectedLayout && selectedLayout.find(item => item.i === String(key)));
 
     return <GridItem
@@ -493,7 +513,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   groupPlaceholder() {
-    const { selecting, group, activeDrag } = this.state;
+    const { selecting, group, focusItem } = this.state;
     const selectedLayout = group[temporaryGroupId];
 
     if (selecting || !selectedLayout || !selectedLayout.length) {
@@ -529,7 +549,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onResizeStart={noop}
       onResizeStop={noop}
       margin={[0, 0]}
-      active={Boolean(activeDrag && activeDrag.i === temporaryGroupId)}
+      active={Boolean(focusItem && focusItem.i === temporaryGroupId)}
     >
       <div />
     </GridItem>

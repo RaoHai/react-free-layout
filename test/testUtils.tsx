@@ -1,6 +1,10 @@
 import React from 'react';
 import _ from 'lodash';
 
+Object.defineProperty(HTMLElement.prototype, 'offsetParent', {
+  get() { return this.parentNode; },
+});
+
 export function generateLayout() {
   return _.map(_.range(0, 25), (item, i) => {
     const y = Math.ceil(Math.random() * 12) + 1;

@@ -21,15 +21,19 @@ export default class DisposableComponent<P = {}, S = {}, SS = {}> extends Compon
     const target = this.getThisNode();
     target.addEventListener(event, callback);
 
-    const handler = () => this.removeEventListener(event, callback);
+    const handler = () => target.removeEventListener(event, callback);
     this._disposables.push({ handler, callback });
     return callback;
   }
 
   protected removeEventListener(event: string, callback: EventListener) {
-    const target = this.getThisNode();
-    target.removeEventListener(event, callback);
-    this._disposables = this._disposables.filter(i => i.callback === callback);
+    this._disposables = this._disposables.filter(i => {
+      if (i.callback === callback) {
+        i.handler();
+        return true;
+      }
+      return false;
+    });
   }
 
   componentWillUnmount() {

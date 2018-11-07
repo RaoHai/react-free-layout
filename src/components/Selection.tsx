@@ -1,8 +1,9 @@
 import React, { EventHandler } from 'react';
 import { getTouchIdentifier, getControlPosition, noop } from '../utils/index';
-import { TouchEvent } from '../utils/events';
 import DisposableComponent from '../utils/disposable';
 
+export interface ReactTouchEvent extends React.TouchEvent<HTMLElement> {};
+export type TouchEvent = Event & ReactTouchEvent;
 export interface MousePosition {
   x: number;
   y: number;
