@@ -12,9 +12,10 @@ import {
   getBoundingRectFromLayout,
   noop,
   GridRect,
+  stretchLayout,
 } from '../utils';
 
-import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, Axis } from './GridItem';
+import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, Axis, GridResizeCallback } from './GridItem';
 import { DraggableData } from 'react-draggable';
 import Selection, { MousePosition } from './Selection';
 import { ResizeCallbacks, ResizeProps } from './Resizable/index';
@@ -567,6 +568,54 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     );
   }
 
+  onContainerHandler(handlerName: keyof ResizeCallbacks<GridResizeCallback>): GridResizeCallback {
+    return (i, { x, y, w, h }, { e, node }: GridResizeEvent) => {
+      const { focusItem, group: stateGroup } = this.state;
+      if (!focusItem) {
+        return;
+      }
+      const group: Group = stateGroup[focusItem.i];
+
+      if (!group) {
+        return;
+      }
+
+      if (handlerName === 'onResizeStart') {
+        return this.setState({
+          oldLayout: this.state.layout
+        }, () => {
+          this.props.onResizeStop(this.state.layout, focusItem, null, null, e, node);
+        });
+      }
+
+      if (handlerName === 'onResize' || handlerName === 'onResizeStop') {
+        const { layout } = group;
+
+        const strechedLayout = stretchLayout(layout, { x, y, right: x + w, bottom: y + h });
+
+        const newState = {
+          layout: this.mergeLayout(strechedLayout),
+        };
+
+        if (handlerName === 'onResizeStop') {
+          Object.assign(newState,{
+            activeDrag: null,
+            oldResizeItem: null,
+            oldLayout: null,
+            bottom: bottom(layout),
+          });
+
+          this.onLayoutMaybeChanged(layout, this.state.oldLayout);
+        }
+
+        this.setState(newState, () =>
+          this.props[handlerName](newState.layout, focusItem, focusItem, null, e, node)
+        );
+      }
+
+    };
+  }
+
   groupPlaceholder() {
     const { selecting, group, focusItem } = this.state;
     const selectedLayout: Group = group[temporaryGroupId];
@@ -600,8 +649,8 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onDrag={noop}
       onDragStart={noop}
       onDragStop={noop}
-      onResize={noop}
-      onResizeStart={noop}
+      onResize={this.onContainerHandler('onResize')}
+      onResizeStart={this.onContainerHandler('onResizeStart')}
       onResizeStop={noop}
       margin={[0, 0]}
       active={Boolean(focusItem && focusItem.i === temporaryGroupId)}

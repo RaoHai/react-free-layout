@@ -308,3 +308,38 @@ export function getBoundingRectFromLayout(layout: Layout): GridRect {
 
   return { x, y, right, bottom }
 }
+
+/**
+ * 按指定 Rect 调整布局
+ * * 注意
+ * * * 在调整一个组时
+ * * * 组的外框是跟随网格的
+ * * * 但是由于保证百分比
+ * * * 所以组内部的元素无法保证跟随网格
+ * * * 再单独调整容器内组件时
+ * * * 才会继续跟随网格
+ * * * 此处逻辑与 Google 的 datastudio 一致。
+ * @param layout 布局数组
+ * @param restrict 限定的 Rect
+ */
+export function stretchLayout(layout: LayoutItem[], restrict: GridRect): LayoutItem[] {
+  if (!layout.length) {
+    return layout;
+  }
+
+  const originRect = getBoundingRectFromLayout(layout);
+  const w = originRect.right - originRect.x;
+  const h = originRect.bottom - originRect.y;
+
+  const nw = restrict.right - restrict.x;
+  const nh = restrict.bottom - restrict.y;
+
+  return layout.map(i => ({
+    ...i,
+    x: ((i.x - originRect.x) * nw / w) + restrict.x,
+    y: ((i.y - originRect.y) * nh / h) + restrict.y,
+    w: i.w * nw / w,
+    h: i.h * nh / h,
+  }));
+
+}
