@@ -184,6 +184,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     const dragItem = cloneLayoutItem(l);
     this.setState({
+      focusItem: l,
       oldDragItem: dragItem,
       oldLayout: this.state.layout,
     });
