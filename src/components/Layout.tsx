@@ -367,7 +367,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     this.onLayoutMaybeChanged(layout, oldLayout);
   }
 
-  mergeLayout(newLayout: Layout, extraValue = {}) {
+  mergeLayout(newLayout: Layout, extraValue: {} | Function = {}) {
     const { layout } = this.state;
 
     if (!newLayout || !newLayout.length) {
@@ -377,7 +377,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     return layout.map(item => {
       const found = newLayout.find(n => n.i === item.i);
       if (found) {
-        return Object.assign(item, found, extraValue);
+        return Object.assign(item, found, typeof extraValue === 'function' ? extraValue(found) : extraValue);
       }
       return item;
     });
@@ -394,6 +394,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   startSelection = () => {
+    this.deleteGroup(temporaryGroupId);
     this.setState(({ group }) => ({
       selecting: true,
       focusItem: null,
@@ -422,6 +423,19 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         getRectFromPoints(start, end, this.calcColWidth()),
       );
     }
+  }
+
+  deleteGroup = (groupId: symbol | string) => {
+    const targetContainer = this.state.group[groupId];
+    if (!targetContainer) {
+      return;
+    }
+
+    const { layout } = targetContainer;
+
+    this.onLayoutMaybeChanged(
+      this.mergeLayout(layout, (i: LayoutItem) => ( delete i.parent && i ))
+    );
   }
 
   addTemporaryGroup = (selectedLayout: Layout, rect: GridRect) => {
