@@ -54,10 +54,10 @@ export type GridResizeCallback = (
   axis: Axis,
 ) => void;
 
-export default class GridItem extends Component<
-GridDragCallbacks<GridDragCallback> &
-ResizeCallbacks<GridResizeCallback>&
-  LayoutItem & {
+export type GridItemProps = GridDragCallbacks<GridDragCallback> &
+  ResizeCallbacks<GridResizeCallback> &
+  LayoutItem &
+  {
     className?: string;
     cols: number;
     maxRows: number;
@@ -72,15 +72,23 @@ ResizeCallbacks<GridResizeCallback>&
     cancel: string;
     active?: boolean;
     selected?: boolean;
-  }, {
-    lastX: number;
-    lastY: number;
-    dragging: Pick<Position, 'left' | 'top'> | null;
-    originPosition: Position | null;
-    originLayout: Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'> | null;
-    resizingPosition: Position | null;
-    resizingLayout: Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'> | null;
+  };
+
+export default class GridItem extends Component<GridItemProps, {
+  lastX: number;
+  lastY: number;
+  dragging: Pick<Position, 'left' | 'top'> | null;
+  originPosition: Position | null;
+  originLayout: Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'> | null;
+  resizingPosition: Position | null;
+  resizingLayout: Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'> | null;
 }> {
+
+  static defaultProps = {
+    margin: [ 0, 0],
+    cancel: "",
+    handle: "",
+  }
 
   constructor(props: GridItem['props']) {
     super(props);
@@ -410,11 +418,5 @@ ResizeCallbacks<GridResizeCallback>&
     newChild = this.mixinResizable(newChild, position);
     newChild = this.mixinDraggable(newChild, isDraggable);
     return newChild;
-  }
-
-  static defaultProps = {
-    margin: [ 0, 0],
-    cancel: "",
-    handle: "",
   }
 }

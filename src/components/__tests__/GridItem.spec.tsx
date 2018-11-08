@@ -22,7 +22,6 @@ test('GridItem', () => {
     containerWidth={1024}
     colWidth={10}
     rowHeight={10}
-    margin={[0, 0]}
     containerPadding={[0, 0]}
   />);
 
