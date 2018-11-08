@@ -87,7 +87,7 @@ export type GridDragEventCallback = (
   item?: LayoutItem | null,
   lastItem?: LayoutItem | null,
   placeholder?: LayoutItem | null,
-  e?: React.SyntheticEvent<MouseEvent> ,
+  e?: MouseEvent | React.SyntheticEvent<MouseEvent> ,
   node?: DraggableData['node'],
 ) => void;
 
@@ -96,7 +96,7 @@ export type GridResizeEventCallback = (
   item?: LayoutItem | null,
   lastItem?: LayoutItem | null,
   placeholder?: LayoutItem | null,
-  e?: React.SyntheticEvent<MouseEvent> ,
+  e?: MouseEvent | React.SyntheticEvent<MouseEvent> ,
   node?: DraggableData['node'],
 ) => void;
 

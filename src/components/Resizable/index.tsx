@@ -30,8 +30,8 @@ export interface ResizeState {
 }
 
 export type ResizeProps = Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'>;
-export type CallbackItem = { e: React.SyntheticEvent<MouseEvent>; node: DraggableData['node']; size: Position };
-export type ResizeCallback = (e: React.SyntheticEvent<MouseEvent>, data: any) => ResizeProps | void;
+export type CallbackItem = { e: MouseEvent | React.SyntheticEvent<MouseEvent>; node: DraggableData['node']; size: Position };
+export type ResizeCallback = (e: MouseEvent | React.SyntheticEvent<MouseEvent>, data: any) => ResizeProps | void;
 
 export interface ResizeCallbacks<T> {
   onResize: T;
@@ -70,7 +70,7 @@ export default class Resizable extends Component<ResizableProps, ResizeState> {
   }
 
   resizeHandler = (handlerName: keyof ResizeCallbacks<ResizeCallback>, axisOptions: AxisOpt) => {
-    return (e: React.SyntheticEvent<MouseEvent>, data: any) => {
+    return (e: MouseEvent | React.SyntheticEvent<MouseEvent>, data: any) => {
       const { node, deltaX, deltaY } = data;
       const { direction } = axisOptions;
 
@@ -108,8 +108,8 @@ export default class Resizable extends Component<ResizableProps, ResizeState> {
 
       const hasCb = typeof this.props[handlerName] === 'function';
       if (hasCb) {
-        if (e.persist && typeof e.persist === 'function') {
-          e.persist();
+        if ((e as React.SyntheticEvent<MouseEvent>).persist && typeof (e as React.SyntheticEvent<MouseEvent>).persist === 'function') {
+          (e as React.SyntheticEvent<MouseEvent>).persist();
         }
         this.setState(newState, () => this.props[handlerName](e, {
           node,

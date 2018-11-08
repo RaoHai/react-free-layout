@@ -6,7 +6,7 @@ import { setTransform } from '../utils';
 import Resizable, { ResizeCallbacks, ResizeCallback, ResizeProps } from './Resizable/index';
 
 export interface GridDragEvent {
-  e: React.SyntheticEvent<MouseEvent>;
+  e: MouseEvent | React.SyntheticEvent<MouseEvent>;
   node: DraggableData['node'];
   newPosition: { x: number; y: number, };
   dx: number;
@@ -14,7 +14,7 @@ export interface GridDragEvent {
 }
 
 export interface GridResizeEvent {
-  e: React.SyntheticEvent<MouseEvent>;
+  e: MouseEvent | React.SyntheticEvent<MouseEvent>;
   axis?: {};
   node: DraggableData['node'];
   size: Position;
@@ -81,10 +81,6 @@ ResizeCallbacks<GridResizeCallback>&
     resizingPosition: Position | null;
     resizingLayout: Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'> | null;
 }> {
-  static defaultProps = {
-    cancel: "",
-    handle: "",
-  }
 
   constructor(props: GridItem['props']) {
     super(props);
@@ -161,7 +157,7 @@ ResizeCallbacks<GridResizeCallback>&
   }
 
   onDragHandler(handlerName: keyof GridDragCallbacks<GridDragCallback>) {
-    return (e: React.SyntheticEvent<MouseEvent>, { node, deltaX, deltaY }: DraggableData) => {
+    return (e: MouseEvent, { node, deltaX, deltaY }: DraggableData) => {
       const handler = this.props[handlerName];
       if (!handler) {
         return;
@@ -414,5 +410,11 @@ ResizeCallbacks<GridResizeCallback>&
     newChild = this.mixinResizable(newChild, position);
     newChild = this.mixinDraggable(newChild, isDraggable);
     return newChild;
+  }
+
+  static defaultProps = {
+    margin: [ 0, 0],
+    cancel: "",
+    handle: "",
   }
 }

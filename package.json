@@ -77,15 +77,15 @@
     "@storybook/cli": "^4.0.2",
     "@storybook/react": "^4.0.2",
     "@types/classnames": "^2.2.6",
-    "@types/jest": "^23.3.7",
-    "@types/lodash": "^4.14.116",
-    "@types/lodash.omit": "^4.5.4",
     "@types/enzyme": "^3.1.14",
     "@types/enzyme-adapter-react-16": "^1.0.3",
     "@types/hoist-non-react-statics": "^3.0.1",
+    "@types/jest": "^23.3.7",
+    "@types/lodash": "^4.14.116",
     "@types/lodash.isequal": "^4.5.3",
+    "@types/lodash.omit": "^4.5.4",
     "@types/node": "^10.11.5",
-    "@types/react": "^16.4.16",
+    "@types/react": "^16.4.18",
     "@types/react-dom": "^16.0.9",
     "@types/storybook__react": "^3.0.9",
     "enzyme": "^3.7.0",
@@ -133,7 +133,10 @@
       "^react-native$": "react-native-web",
       "^.+\\.module\\.(css|sass|scss)$": "identity-obj-proxy"
     },
-    "coverageReporters": ["json", "html"],
+    "coverageReporters": [
+      "json",
+      "html"
+    ],
     "moduleFileExtensions": [
       "web.js",
       "js",
