@@ -9,6 +9,8 @@ export interface GridDragEvent {
   e: React.SyntheticEvent<MouseEvent>;
   node: DraggableData['node'];
   newPosition: { x: number; y: number, };
+  dx: number;
+  dy: number;
 }
 
 export interface GridResizeEvent {
@@ -207,7 +209,13 @@ ResizeCallbacks<GridResizeCallback>&
       }
 
       const { x, y } = this.calcXY(newPosition.top, newPosition.left);
-      return handler.call(this, this.props.i, x, y, { e, node, newPosition });
+      return handler.call(this, this.props.i, x, y, {
+        e,
+        node,
+        newPosition,
+        dx: x - this.props.x,
+        dy: y - this.props.y,
+      });
     }
   }
 
