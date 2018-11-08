@@ -191,40 +191,68 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     return this.props.onDragStart(layout, l, l, null, e, node);
   }
 
-  onDrag = (i: string, x: number, y: number, { e, node, dx, dy }: GridDragEvent) => {
-    const { oldDragItem } = this.state;
-    let { layout } = this.state;
+  moveElement = (layout: LayoutItem[], i: symbol | string, { x, y, dx, dy }: { [key: string]: number }) => {
+    const l = getLayoutItem(layout, String(i));
+    if (!l) {
+      return { layout, placeholder: null } ;
+    }
+
     const cols = this.getCols(this.props);
-    const l = getLayoutItem(layout, i);
+    let placeholder;
+
+    // 移动容器
+    if (l.parent) {
+      // const elementToMove
+      const { group } = this.state;
+      const container: Group = group[l.parent];
+      const moved = container.layout;
+      moved.forEach(item => {
+        moveElement(
+          moved,
+          item,
+          item.x + dx,
+          item.y + dy,
+          true,
+          cols,
+          true,
+        );
+        return layout;
+      });
+
+      layout = this.mergeLayout(moved);
+    } else {
+      placeholder = {
+        w: l.w,
+        h: l.h,
+        x: l.x,
+        y: l.y,
+        placeholder: true,
+        i,
+        z: TOP
+      };
+
+      moveElement(
+        layout,
+        l,
+        x,
+        y,
+        true,
+        cols
+      );
+    }
+
+    return { layout, placeholder };
+  }
+
+  onDrag = (i: string, x: number, y: number, { e, node, dx, dy }: GridDragEvent) => {
+    const { oldDragItem, layout: stateLayout } = this.state;
+    const l = getLayoutItem(stateLayout, i);
     if (!l) {
       return;
     }
 
-    if (l.parent) {
-      return this.onDragContainer(l.parent, dx, dy);
-    }
+    const { placeholder, layout } = this.moveElement(stateLayout, i, { x, y, dx, dy });
 
-    // Create placeholder (display only)
-    const placeholder = {
-      w: l.w,
-      h: l.h,
-      x: l.x,
-      y: l.y,
-      placeholder: true,
-      i,
-      z: TOP
-    };
-
-    // Move the element to the dragged location.
-    const isUserAction = true;
-    layout = moveElement(
-      layout,
-      l,
-      x,
-      y,
-      isUserAction,
-      cols
-    );
     if (oldDragItem) {
       this.props.onDrag(layout, oldDragItem, l, placeholder, e, node);
     }
@@ -240,23 +268,14 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
    * @param {Event} e The mousedown event
    * @param {Element} node The current dragging DOM element
    */
-  onDragStop = (i: string, x: number, y: number, { e, node }: GridDragEvent) => {
-    const { oldDragItem } = this.state;
-    let { layout } = this.state;
-    const l = getLayoutItem(layout, i);
+  onDragStop = (i: string, x: number, y: number, { e, node, dx, dy }: GridDragEvent) => {
+    const { oldDragItem, layout: stateLayout } = this.state;
+    const l = getLayoutItem(stateLayout, i);
     if (!l) {
       return;
     }
-    // Move the element here
-    const isUserAction = true;
-    layout = moveElement(
-      layout,
-      l,
-      x,
-      y,
-      isUserAction,
-      this.getCols()
-    );
+
+   const { layout } = this.moveElement(stateLayout, i, { x, y, dx, dy });
 
     this.props.onDragStop(layout, oldDragItem, l, null, e, node);
 
@@ -281,33 +300,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     }
 
     this.setState({ activeGroup });
-  }
-
-  /**
-   * 在没有 Focus 容器内组件的情况下拖动组件
-   * 会进行容器移动
-   */
-  onDragContainer = (i: string | symbol, deltaX : number, deltaY: number) => {
-    const container: Group = this.state.group[i];
-    if (!container) {
-      return;
-    }
-
-    const { layout } = container;
-
-    const cols = this.getCols();
-    layout.forEach(item => {
-      moveElement(
-        layout,
-        item,
-        item.x + deltaX,
-        item.y + deltaY,
-        true,
-        cols,
-      );
-      return layout;
-    });
-    this.setState({ layout: this.mergeLayout(layout) });
   }
 
   onResizeStart = (i: string, { x, y, w, h }: ResizeProps, { e, node }: GridResizeEvent) => {

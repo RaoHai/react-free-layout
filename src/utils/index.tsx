@@ -164,6 +164,16 @@ export function cloneLayoutItem(layoutItem: LayoutItem): LayoutItem {
   };
 }
 
+/**
+ * 移动元素
+ * @param layout 布局数组
+ * @param l 需要移动的组件
+ * @param x 新的 x
+ * @param y 新的 y
+ * @param isUserAction
+ * @param cols
+ * @param forceMovement 是否忽略 static 标记进行强制移动
+ */
 export function moveElement(
   layout: Layout,
   l: LayoutItem,
@@ -171,8 +181,9 @@ export function moveElement(
   y: number,
   isUserAction: boolean,
   cols: number,
+  forceMovement: boolean = false,
 ) {
-  if (l.static) {
+  if (l.static && !forceMovement) {
     return layout;
   }
 
