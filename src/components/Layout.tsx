@@ -450,11 +450,11 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     this.setState({ selectedLayout });
   }
 
+
   endSelection = (start?: MousePosition, end?: MousePosition) => {
     this.setState({ selecting: false });
     const { selectedLayout } = this.state;
     if (start && end && selectedLayout) {
-      this.props.onLayoutSelect(selectedLayout);
       this.addTemporaryGroup(selectedLayout);
     }
   }
@@ -496,13 +496,16 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         h: rect.bottom - rect.y,
         i: temporaryGroupId,
       },
-    }, () => this.onLayoutMaybeChanged(
-      this.mergeLayout(hoistedLayout, i => ({
-        ...i,
-        _parent: i.parent,
-        parent: temporaryGroupId,
-      }))
-    ));
+    }, () => {
+      this.onLayoutMaybeChanged(
+        this.mergeLayout(hoistedLayout, i => ({
+          ...i,
+          _parent: i.parent,
+          parent: temporaryGroupId,
+        }))
+      );
+      this.props.onLayoutSelect(hoistedLayout);
+    });
   }
 
   processGridItem(child: ReactChild, colWidth: number) {

@@ -2,7 +2,8 @@ import React from 'react';
 import { mount } from 'enzyme';
 import { mouseMove, mouseUp, generateDOM, selectRange } from '../../../test/testUtils';
 import Selection from '../Selection';
-import Layout, { temporaryGroupId, IGridLayoutState } from '../Layout';
+import Layout, { temporaryGroupId, IGridLayoutState, Group, LayoutItem } from '../Layout';
+import { groupLayout } from '../../utils/index';
 
 
 test('Selection', () => {
@@ -102,11 +103,13 @@ test.only('select single item and group', () => {
     }
   };
 
+  const fn = jest.fn();
   const wrapper = mount(<Layout
     layout={layout}
     group={group}
     width={1024}
     grid={[10, 10]}
+    onLayoutSelect={fn}
   >
     {generateDOM(layout)}
   </Layout>);
@@ -118,5 +121,15 @@ test.only('select single item and group', () => {
 
   const state = wrapper.state() as IGridLayoutState;
   expect(state.selectedLayout).toHaveLength(3);
+  expect(((state.activeGroup) as Group).id).toEqual(temporaryGroupId);
+  expect(((state.focusItem) as LayoutItem).i).toEqual(temporaryGroupId);
 
+  expect(fn).toHaveBeenCalled();
+
+  const selectedLayout = fn.mock.calls[0][0];
+  expect(selectedLayout).toHaveLength(3);
+  const newGroup = groupLayout(selectedLayout, 'newGroup');
+
+  expect(newGroup.layout).toHaveLength(3);
+  expect(newGroup.layout.every(i => i.parent === 'newGroup'));
 });
