@@ -19,4 +19,5 @@ test('Layout with Group', () => {
   expect(wrapper);
   const state = wrapper.state() as IGridLayoutState;
   expect(state.group).toEqual(group);
+  console.log('>> state', state.layout);
 });

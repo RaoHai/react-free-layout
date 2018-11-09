@@ -36,9 +36,10 @@ export function generateGroup(layouts: any[]) {
   const groups = {};
   const max = Math.round(Math.random() * 10);
   _.forEach(layouts, (l, i) => {
-    const id = Math.floor(Math.random() * (max + 1));
+    const id = `group-${Math.floor(Math.random() * (max + 1))}`;
     if (!groups[id]) {
       groups[id] = {
+        id: String(id),
         layout: [],
       };
     }

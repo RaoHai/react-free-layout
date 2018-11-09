@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Layout, LayoutItem, Groups, temporaryGroupId } from '../components/Layout';
+import { Layout, LayoutItem, Groups, temporaryGroupId, Group } from '../components/Layout';
 import Selection, { MousePosition, TouchEvent } from '../components/Selection';
 
 export type CompactType = 'horizontal' | 'vertical';
@@ -18,14 +18,24 @@ export function synchronizeLayoutWithChildren(
   initialLayout: Layout,
   children: JSX.Element[] | JSX.Element,
   cols: number,
-  compactType: CompactType = 'vertical'
+  compactType: CompactType = 'vertical',
+  group: Groups,
 ): {
   layout: Layout;
   maxZ: number;
   bottom: number;
+  group: Groups,
 } {
   let layout: Layout = initialLayout;
   let maxZ = -Infinity;
+
+  const parentMap = {};
+
+  for (const key in group) {
+    if (group.hasOwnProperty(key)) {
+      (group[key] as Group).layout.forEach(i => parentMap[i.i] = key);
+    }
+  }
 
   React.Children.forEach(children, (child: React.ReactChild, index) => {
     if (!React.isValidElement(child)) {
@@ -34,18 +44,24 @@ export function synchronizeLayoutWithChildren(
     const definition = getLayoutItem(layout, String(child.key));
     if (definition) {
       maxZ = Math.max(maxZ, definition.z || 0);
+      if (parentMap.hasOwnProperty(definition.i)) {
+        definition.parent = parentMap[definition.i];
+      }
+
       layout[index] = definition;
     } else {
       const g = child.props["data-grid"];
-        layout[index] = g ? g : { w: 1, h: 1, x: 0, y: bottom(layout), i: String(child.key) };
+      layout[index] = g ? g : { w: 1, h: 1, x: 0, y: bottom(layout), i: String(child.key) };
     }
   });
+
 
   layout = correctBounds(layout, { cols });
   return {
     layout,
     maxZ,
     bottom: bottom(layout),
+    group,
   }
 }
 
@@ -281,7 +297,11 @@ export function getRectFromPoints(start: MousePosition, end: MousePosition, colW
   };
 }
 
-export function pickByRect(layout: Layout, rect: GridRect, pickOption: 'include' | 'contain' = 'contain') {
+export function pickByRect(
+  layout: Layout,
+  rect: GridRect,
+  pickOption: 'include' | 'contain' = 'contain',
+) {
   return layout.filter(item => {
     if (pickOption === 'include') {
       return rect.x < item.x
