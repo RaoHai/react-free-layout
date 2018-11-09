@@ -19,7 +19,7 @@ import {
 import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, Axis, GridResizeCallback } from './GridItem';
 import { DraggableData } from 'react-draggable';
 import Selection, { MousePosition } from './Selection';
-import { ResizeCallbacks, ResizeProps } from './Resizable/index';
+import { ResizeCallbacks, ResizeProps, SelectCallbacks } from './Resizable/index';
 
 
 export const temporaryGroupId = Symbol('template');
@@ -45,7 +45,7 @@ const TOP = 999;
 export type Layout = LayoutItem[];
 export interface Group {
   id: string | symbol
-  rect: GridRect;
+  rect?: GridRect;
   layout: Layout;
 }
 
@@ -81,6 +81,7 @@ const defaultProps = {
   onResizeStart: noop,
   onResize: noop,
   onResizeStop: noop,
+  onLayoutSelect: noop,
   isDraggable: true,
   isResizable: true,
   onLayoutChange: () => {},
@@ -105,6 +106,10 @@ export type GridResizeEventCallback = (
   node?: DraggableData['node'],
 ) => void;
 
+export type SelectEventCallback = (
+  selectedLayout: Layout,
+) => void;
+
 // type DefaultProps = Readonly<typeof defaultProps>;
 export type IGridLayoutProps = {
   layout: Layout;
@@ -124,6 +129,7 @@ export type IGridLayoutProps = {
   onLayoutChange: (layout: Layout) => void;
 } & GridDragCallbacks<GridDragEventCallback>
 & ResizeCallbacks<GridResizeEventCallback>
+& SelectCallbacks<SelectEventCallback>
 export default class DeerGridLayout extends React.Component<IGridLayoutProps, IGridLayoutState> {
   public static defaultProps: Partial<IGridLayoutProps> = defaultProps;
   private mounted = false;
@@ -214,6 +220,9 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       // const elementToMove
       const { group } = this.state;
       const container: Group = group[l.parent];
+      if (!container) {
+        return { layout, placeholder: null };
+      }
       const moved = container.layout;
       moved.forEach(item => {
         moveElement(
@@ -437,9 +446,11 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
   endSelection = (start?: MousePosition, end?: MousePosition) => {
     this.setState({ selecting: false });
-    if (start && end && this.state.selectedLayout) {
+    const { selectedLayout } = this.state;
+    if (start && end && selectedLayout) {
+      this.props.onLayoutSelect(selectedLayout);
       this.addTemporaryGroup(
-        this.state.selectedLayout,
+        selectedLayout,
         getRectFromPoints(start, end, this.calcColWidth()),
       );
     }

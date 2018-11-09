@@ -1,6 +1,8 @@
 import React from 'react';
 import _ from 'lodash';
 import { getBoundingRectFromLayout } from '../src/utils/index';
+import { ReactWrapper } from 'enzyme';
+import { Group } from '../src/components/Layout';
 
 Object.defineProperty(HTMLElement.prototype, 'offsetParent', {
   get() { return this.parentNode; },
@@ -33,7 +35,7 @@ export function generateDOM(layouts: any[]) {
 }
 
 export function generateGroup(layouts: any[]) {
-  const groups = {};
+  const groups: { [key: string]: Group } = {};
   const max = Math.round(Math.random() * 10);
   _.forEach(layouts, (l, i) => {
     const id = `group-${Math.floor(Math.random() * (max + 1))}`;
@@ -49,7 +51,7 @@ export function generateGroup(layouts: any[]) {
 
   for (const groupId in groups) {
     if (groups.hasOwnProperty(groupId)) {
-      groups[groupId].grid = getBoundingRectFromLayout(groups[groupId].layout);
+      groups[groupId].rect = getBoundingRectFromLayout(groups[groupId].layout);
     }
   }
 
@@ -72,4 +74,14 @@ export function mouseUp(x: number, y: number, node?: Element) {
       0, 0, 0, x, y, false, false, false, false, 0, null);
   doc.dispatchEvent(evt);
   return evt;
+}
+
+export function selectRange(
+  target: ReactWrapper,
+  start: { x: number, y: number },
+  end: { x: number, y: number },
+) {
+  target.simulate('mousedown', { clientX: start.x, clientY: start.y });
+  mouseMove(end.x, end.y);
+  mouseUp(end.x, end.y);
 }

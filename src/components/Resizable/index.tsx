@@ -33,6 +33,9 @@ export type ResizeProps = Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'>;
 export type CallbackItem = { e: MouseEvent | React.SyntheticEvent<MouseEvent>; node: DraggableData['node']; size: Position };
 export type ResizeCallback = (e: MouseEvent | React.SyntheticEvent<MouseEvent>, data: any) => ResizeProps | void;
 
+export interface SelectCallbacks<T> {
+  onLayoutSelect: T
+}
 export interface ResizeCallbacks<T> {
   onResize: T;
   onResizeStart: T;

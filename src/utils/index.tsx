@@ -297,6 +297,18 @@ export function getRectFromPoints(start: MousePosition, end: MousePosition, colW
   };
 }
 
+export function groupLayout(layout: Layout, id: string): Group {
+  return {
+    id,
+    layout: layout.map(i => ({ ...i, parent: id })),
+    rect: getBoundingRectFromLayout(layout),
+  };
+}
+
+export function splitGroup(layout: Layout): Layout {
+  return layout.map(i => ({ ...i, parent: undefined }));
+}
+
 export function pickByRect(
   layout: Layout,
   rect: GridRect,

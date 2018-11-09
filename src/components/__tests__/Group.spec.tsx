@@ -2,7 +2,8 @@
 import React from 'react';
 import { mount } from 'enzyme';
 import Layout, { IGridLayoutState } from '../Layout';
-import { generateGroup, generateDOM, generateLayout } from '../../../test/testUtils';
+import { generateGroup, generateDOM, generateLayout, selectRange } from '../../../test/testUtils';
+import { groupLayout } from '../../utils/index';
 const layout = generateLayout();
 
 test('Layout with Group', () => {
@@ -19,5 +20,53 @@ test('Layout with Group', () => {
   expect(wrapper);
   const state = wrapper.state() as IGridLayoutState;
   expect(state.group).toEqual(group);
-  console.log('>> state', state.layout);
+  expect(state.layout.every(i => !!i.parent));
+});
+
+test('GroupAction: create group', () => {
+  const fn = jest.fn();
+  const layout = [
+    { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+    { i: 'b', x: 25, y: 10, w: 10, h: 10 }
+  ];
+  const wrapper = mount(<Layout
+    layout={layout}
+    width={1024}
+    grid={[10, 10]}
+    onLayoutSelect={fn}
+  >
+    <div key="a">a</div>
+    <div key="b">b</div>
+  </Layout>);
+
+  expect(wrapper);
+
+  const eventTarget =  wrapper.find('div').at(0);
+  expect(eventTarget);
+  selectRange(eventTarget, { x: 0, y: 0}, { x: 300, y: 100 });
+
+  const state = wrapper.state() as IGridLayoutState;
+
+  expect(state.selectedLayout).toHaveLength(2);
+  expect(fn).toBeCalled();
+  expect(fn.mock.calls[0][0]).toEqual(state.selectedLayout);
+
+  const group = groupLayout(fn.mock.calls[0][0], 'newGroup');
+  expect(group.layout).toHaveLength(2);
+  expect(group.layout.every(i => i.parent === 'newGroup'));
+
+  const newLayout = mount(<Layout
+    layout={group.layout}
+    group={{ newGroup: group }}
+    width={1024}
+    grid={[10, 10]}
+    onLayoutSelect={fn}
+  >
+    <div key="a">a</div>
+    <div key="b">b</div>
+  </Layout>);
+
+  expect(newLayout);
+  const newState = newLayout.state() as IGridLayoutState;
+  expect(newState.group).toEqual({ newGroup: group });
 });
