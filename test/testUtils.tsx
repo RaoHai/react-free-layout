@@ -25,7 +25,7 @@ export function generateLayout() {
 export function generateDOM(layouts: any[]) {
   return _.map(layouts, (l, i) => {
     return (
-      <div key={i} className={l.static ? 'react-grid-item static' : 'react-grid-item'}>
+      <div key={l.i || i} className={l.static ? 'react-grid-item static' : 'react-grid-item'}>
         {l.static ?
           <span className="text" title="This item is static and cannot be removed or resized.">Static - {i}</span>
           : <span className="text">{i}</span>
@@ -38,7 +38,11 @@ export function generateGroup(layouts: any[]) {
   const groups: { [key: string]: Group } = {};
   const max = Math.round(Math.random() * 10);
   _.forEach(layouts, (l, i) => {
-    const id = `group-${Math.floor(Math.random() * (max + 1))}`;
+    const rd = Math.floor(Math.random() * (max + 1));
+    if (rd < max / 2) {
+      return;
+    }
+    const id = `group-${rd}`;
     if (!groups[id]) {
       groups[id] = {
         id: String(id),

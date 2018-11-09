@@ -33,7 +33,10 @@ export function synchronizeLayoutWithChildren(
 
   for (const key in group) {
     if (group.hasOwnProperty(key)) {
-      (group[key] as Group).layout.forEach(i => parentMap[i.i] = key);
+      const g: Group = group[key];
+      g.id = g.id || key;
+      g.layout.forEach(i => parentMap[i.i] = key);
+      g.layout = [];
     }
   }
 
@@ -44,8 +47,15 @@ export function synchronizeLayoutWithChildren(
     const definition = getLayoutItem(layout, String(child.key));
     if (definition) {
       maxZ = Math.max(maxZ, definition.z || 0);
+
+      if (definition.parent && !parentMap.hasOwnProperty(definition.parent)) {
+        delete definition.parent;
+      }
+
       if (parentMap.hasOwnProperty(definition.i)) {
-        definition.parent = parentMap[definition.i];
+        const parentId = parentMap[definition.i];
+        definition.parent = parentId
+        group[parentId].layout.push(definition);
       }
 
       layout[index] = definition;
@@ -327,6 +337,26 @@ export function pickByRect(
       && rect.right > item.x
       && rect.bottom > item.y
   });
+}
+
+export function hoistSelectionByParent(
+  layout: Layout,
+  group: Groups,
+): Layout {
+  const parents = new Set();
+  const singleItems: LayoutItem[] = [];
+
+  layout.forEach(i => {
+    if (i.parent) {
+      parents.add(i.parent);
+    } else {
+      singleItems.push(i);
+    }
+  });
+
+  return parents.size ? Array.from(parents).reduce((list, parentId) =>
+    group[parentId] ? list.concat( group[parentId].layout || []) : []
+  , []).concat(singleItems) : layout;
 }
 
 export function getBoundingRectFromLayout(layout: Layout): GridRect {

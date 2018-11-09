@@ -1,8 +1,8 @@
 import React from 'react';
 import { mount } from 'enzyme';
-import { mouseMove, mouseUp } from '../../../test/testUtils';
+import { mouseMove, mouseUp, generateDOM, selectRange } from '../../../test/testUtils';
 import Selection from '../Selection';
-import Layout, { temporaryGroupId } from '../Layout';
+import Layout, { temporaryGroupId, IGridLayoutState } from '../Layout';
 
 
 test('Selection', () => {
@@ -78,5 +78,45 @@ test('layout selection', () => {
 
   // temporary group exists
   expect(state.group[temporaryGroupId]);
+
+});
+
+test.only('select single item and group', () => {
+  /**
+   *  |---|  |---|
+   *  | a |  | c |
+   *  |---|  |---|
+   *  |---|
+   *  | b |
+   *  |---|
+   */
+  const layout = [
+    { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+    { i: 'b', x: 10, y: 25, w: 10, h: 10 },
+    { i: 'c', x: 25, y: 10, w: 10, h: 10 },
+  ];
+  const group = {
+    'a+b': {
+      id: 'a+b',
+      layout: [{ i: 'a'}, { i: 'b'}]
+    }
+  };
+
+  const wrapper = mount(<Layout
+    layout={layout}
+    group={group}
+    width={1024}
+    grid={[10, 10]}
+  >
+    {generateDOM(layout)}
+  </Layout>);
+
+  expect(wrapper);
+
+  const eventTarget =  wrapper.find('div').at(0);
+  selectRange(eventTarget, { x: 10, y: 10 }, { x: 300, y: 200 });
+
+  const state = wrapper.state() as IGridLayoutState;
+  expect(state.selectedLayout).toHaveLength(3);
 
 });
