@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Layout, LayoutItem } from '../components/Layout';
+import { Layout, LayoutItem, Groups, temporaryGroupId } from '../components/Layout';
 import Selection, { MousePosition, TouchEvent } from '../components/Selection';
 
 export type CompactType = 'horizontal' | 'vertical';
@@ -307,6 +307,20 @@ export function getBoundingRectFromLayout(layout: Layout): GridRect {
   });
 
   return { x, y, right, bottom }
+}
+
+
+export function mergeTemporaryGroup(
+  newGroup: Groups,
+  stateGroup: Groups,
+) {
+
+  if (!stateGroup || !stateGroup[temporaryGroupId]) {
+    return newGroup;
+  }
+
+  newGroup[temporaryGroupId] = stateGroup[temporaryGroupId]
+  return newGroup;
 }
 
 /**

@@ -23,7 +23,13 @@ test('GridItem', () => {
     colWidth={10}
     rowHeight={10}
     containerPadding={[0, 0]}
-  />);
+  >
+    <div>a</div>
+  </GridItem>);
 
   expect(wrapper);
+  const dom = wrapper.getDOMNode();
+  expect(dom);
+  expect(window.getComputedStyle(dom).width).toEqual('120px');
+  expect(window.getComputedStyle(dom).height).toEqual('80px');
 });

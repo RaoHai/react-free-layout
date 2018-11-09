@@ -1,6 +1,6 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import { generateLayout, generateDOM } from '../test/testUtils';
+import { generateLayout, generateDOM, generateGroup } from '../test/testUtils';
 import Layout from '../src/components/Layout';
 import '../src/style/index.less';
 
@@ -16,6 +16,14 @@ storiesOf("Basic Usage", module)
   </Layout>)
   .add('Basic Render', () => <Layout
     layout={layout}
+    width={1024}
+    grid={[8, 8]}
+  >
+    {generateDOM(layout)}
+  </Layout>)
+  .add('Groups', () => <Layout
+    layout={layout}
+    group={generateGroup(layout)}
     width={1024}
     grid={[8, 8]}
   >

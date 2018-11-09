@@ -1,5 +1,6 @@
 import React from 'react';
 import _ from 'lodash';
+import { getBoundingRectFromLayout } from '../src/utils/index';
 
 Object.defineProperty(HTMLElement.prototype, 'offsetParent', {
   get() { return this.parentNode; },
@@ -29,6 +30,29 @@ export function generateDOM(layouts: any[]) {
         }
       </div>);
   });
+}
+
+export function generateGroup(layouts: any[]) {
+  const groups = {};
+  const max = Math.round(Math.random() * 10);
+  _.forEach(layouts, (l, i) => {
+    const id = Math.floor(Math.random() * (max + 1));
+    if (!groups[id]) {
+      groups[id] = {
+        layout: [],
+      };
+    }
+
+    groups[id].layout.push(l);
+  });
+
+  for (const groupId in groups) {
+    if (groups.hasOwnProperty(groupId)) {
+      groups[groupId].grid = getBoundingRectFromLayout(groups[groupId].layout);
+    }
+  }
+
+  return groups;
 }
 
 export function mouseMove(x: number, y: number, node?: Element) {
