@@ -1,9 +1,9 @@
-import React, { EventHandler } from 'react';
+import React from 'react';
 import { getTouchIdentifier, getControlPosition, noop } from '../utils/index';
 import DisposableComponent from '../utils/disposable';
 
+export type TouchEvent = React.SyntheticEvent<React.TouchEvent> | Event;
 export interface ReactTouchEvent extends React.TouchEvent<HTMLElement> {};
-export type TouchEvent = Event & ReactTouchEvent;
 export interface MousePosition {
   x: number;
   y: number;
@@ -30,7 +30,8 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     onSelectEnd: noop,
     onSelect: noop,
   }
-  private dragWrapper: Element | null = null;
+  private dragWrapper?: Element | null = null;
+  private dragInner?: Element | null = null;
 
   constructor(props: SelectionProps) {
     super(props);
@@ -41,12 +42,12 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
       touchIdentifier: 0,
     }
   }
-  startSelection: EventHandler<TouchEvent> = e => {
-    if (e.target !== this.dragWrapper) {
+  startSelection: React.MouseEventHandler<HTMLElement> = e => {
+    if (e.target !== this.dragWrapper && e.target !== this.dragInner) {
       return;
     }
-    const touchIdentifier = getTouchIdentifier(e);
-    const position = getControlPosition(e, touchIdentifier, this);
+    const touchIdentifier = getTouchIdentifier(e as any);
+    const position = getControlPosition(e as any, touchIdentifier, this);
     if (!position) {
       return;
     }
@@ -114,11 +115,16 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
 
   render() {
     const { children, style } = this.props;
-    return <div className="react-grid-layout-selectionw-wrapper" style={style}>
+    return <div
+      className="react-grid-layout-selectionw-wrapper"
+      style={style}
+      ref={(ele: HTMLElement | null) => { this.dragWrapper = ele; }}
+      onMouseDown={this.startSelection}
+    >
       {this.drawingHandler()}
       {React.cloneElement(React.Children.only(children), {
         onMouseDown: this.startSelection,
-        ref: (ele: Element) => this.dragWrapper = ele
+        ref: (ele: HTMLElement | null) => { this.dragInner = ele; }
       })}
     </div>
   }

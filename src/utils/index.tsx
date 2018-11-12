@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Layout, LayoutItem, Groups, temporaryGroupId, Group } from '../components/Layout';
-import Selection, { MousePosition, TouchEvent } from '../components/Selection';
+import Selection, { MousePosition } from '../components/Selection';
 
 export type CompactType = 'horizontal' | 'vertical';
 export interface Position {
