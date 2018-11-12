@@ -1,8 +1,10 @@
 {
-  "name": "deer-grid-layout",
-  "version": "0.1.0",
-  "private": true,
+  "name": "@alipay/deer-free-layout",
+  "version": "0.1.2",
   "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
   "dependencies": {
     "@alipay/deer-react-resizable": "^1.9.0-beta4",
     "@babel/core": "7.1.0",
@@ -162,5 +164,8 @@
   },
   "eslintConfig": {
     "extends": "react-app"
+  },
+  "publishConfig": {
+    "registry": "http://registry.npm.alibaba-inc.com"
   }
 }

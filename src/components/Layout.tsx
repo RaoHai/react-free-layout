@@ -123,6 +123,7 @@ export type IGridLayoutProps = {
   width: number;
   maxRows: number;
   style?: {};
+  wrapperStyle?: {};
   autoSize?: boolean;
   activeDrag?: LayoutItem;
   containerPadding: [number, number];
@@ -765,7 +766,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       y={rect.y}
       w={rect.right - rect.x}
       h={rect.bottom - rect.y}
-      className="react-selection-placeholder"
+      className="react-grid-layout-group react-selection-placeholder"
       maxRows={maxRows}
       rowHeight={grid[1]}
       containerWidth={width}
@@ -812,7 +813,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   render() {
-    const { width } = this.props;
+    const { width, wrapperStyle = {} } = this.props;
     const { bottom } = this.state;
     const colWith = this.calcColWidth();
 
@@ -820,6 +821,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onSelectStart={this.startSelection}
       onSelect={this.selectLayoutItemByRect}
       onSelectEnd={this.endSelection}
+      style={wrapperStyle}
     >
       <div style={{ width, height: (bottom + 10) * colWith }}>
         {this.group()}

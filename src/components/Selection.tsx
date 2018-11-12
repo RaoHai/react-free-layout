@@ -11,6 +11,7 @@ export interface MousePosition {
 
 export interface SelectionProps {
   offsetParent?: Element;
+  style?: {};
   onSelect: (start?: MousePosition, end?: MousePosition) => void;
   onSelectStart: () => void;
   onSelectEnd: (start?: MousePosition, end?: MousePosition) => void;
@@ -112,14 +113,14 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
   }
 
   render() {
-    const { children } = this.props;
-    return <>
+    const { children, style } = this.props;
+    return <div className="react-grid-layout-selectionw-wrapper" style={style}>
       {this.drawingHandler()}
       {React.cloneElement(React.Children.only(children), {
         onMouseDown: this.startSelection,
         ref: (ele: Element) => this.dragWrapper = ele
       })}
-    </>
+    </div>
   }
 }
 
