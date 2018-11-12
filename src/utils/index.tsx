@@ -12,7 +12,7 @@ export interface Position {
 };
 
 export function noop() { return; }
-export type OffsetParent = Element | (() => Element | null);
+export type OffsetParent = HTMLElement | (() => HTMLElement | null);
 
 export function synchronizeLayoutWithChildren(
   initialLayout: Layout,
@@ -273,7 +273,7 @@ export function getControlPosition(
   return offsetXYFromParent(touchObj || e as any, selection.props.offsetParent);
 }
 
-export function getOffsetParent(offsetParent?: OffsetParent) {
+export function getOffsetParent(offsetParent?: OffsetParent): HTMLElement {
   if (typeof offsetParent === 'function') {
     return offsetParent() || document.body;
   }

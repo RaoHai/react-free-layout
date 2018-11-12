@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { DraggableCore, DraggableData } from 'react-draggable';
 import classNames from 'classnames';
 import { LayoutItem } from './Layout';
-import { setTransform } from '../utils';
+import { setTransform, getOffsetParent, OffsetParent } from '../utils';
 import Resizable, { ResizeCallbacks, ResizeCallback, ResizeProps } from './Resizable/index';
 
 export interface GridDragEvent {
@@ -58,6 +58,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
   ResizeCallbacks<GridResizeCallback> &
   LayoutItem &
   {
+    offsetParent?: OffsetParent;
     className?: string;
     cols: number;
     maxRows: number;
@@ -357,7 +358,7 @@ export default class GridItem extends Component<GridItemProps, {
         onStop={this.onDragHandler("onDragStop")}
         disabled={!draggable}
         handle={this.props.handle}
-        offsetParent={document.body}
+        offsetParent={getOffsetParent(this.props.offsetParent)}
         cancel={
           ".react-resizable-handle" +
           (this.props.cancel ? "," + this.props.cancel : "")

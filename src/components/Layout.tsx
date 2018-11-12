@@ -651,6 +651,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       z={l.z}
       active={!!active}
       selected={selected}
+      offsetParent={this.getOffsetParent}
     >{child}</GridItem>
   }
 
@@ -692,6 +693,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         onResize={noop}
         onResizeStart={noop}
         onResizeStop={noop}
+        offsetParent={this.getOffsetParent}
       >
         <div />
       </GridItem>
@@ -781,6 +783,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       margin={[0, 0]}
       active={active}
       selected={selected}
+      offsetParent={this.getOffsetParent}
     >
       <div />
     </GridItem>
