@@ -62,8 +62,8 @@ export function generateGroup(layouts: any[]) {
   return groups;
 }
 
-export function mouseMove(x: number, y: number, node?: Element) {
-  const doc = node && node.ownerDocument || document;
+export function mouseMove(x: number, y: number, node?: Element | ReactWrapper) {
+  const doc = node && (node as Element).ownerDocument || document;
   const evt = doc.createEvent('MouseEvents');
   evt.initMouseEvent('mousemove', true, true, window,
       0, 0, 0, x, y, false, false, false, false, 0, null);
@@ -71,8 +71,8 @@ export function mouseMove(x: number, y: number, node?: Element) {
   return evt;
 }
 
-export function mouseUp(x: number, y: number, node?: Element) {
-  const doc = node && node.ownerDocument || document;
+export function mouseUp(x: number, y: number, node?: Element | ReactWrapper) {
+  const doc = node && (node as Element).ownerDocument || document;
   const evt = doc.createEvent('MouseEvents');
   evt.initMouseEvent('mouseup', true, true, window,
       0, 0, 0, x, y, false, false, false, false, 0, null);

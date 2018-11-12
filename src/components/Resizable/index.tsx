@@ -10,7 +10,7 @@ export type AxisOpt = {
   direction: [ Direction, Direction ];
 }
 
-const handles: AxisOpt[] = [
+export const handles: AxisOpt[] = [
   { key: 'tl', direction: [ -1, -1] },
   { key: 'tr', direction: [ -1, 1 ] },
   { key: 'bl', direction: [ 1, -1 ] },

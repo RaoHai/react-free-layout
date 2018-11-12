@@ -2,7 +2,8 @@ import React from 'react';
 import { shallow, mount } from 'enzyme';
 import toJSON from 'enzyme-to-json';
 import { generateLayout, generateDOM, mouseMove, mouseUp } from '../../../test/testUtils';
-import Layout from '../Layout';
+import Layout, { IGridLayoutState } from '../Layout';
+import { handles } from '../Resizable/index';
 const layout = generateLayout();
 
 
@@ -25,6 +26,39 @@ test('single layout', () => {
   expect(wrapper.instance()).toBeNull();
 });
 
+
+test('layoutResize', () => {
+  const resizeStart = jest.fn();
+  const resize = jest.fn();
+  const resizeStop = jest.fn();
+
+  const wrapper = mount(<Layout
+    layout={[{ i: 'a', x: 10, y: 10, w: 10, h: 10}]}
+    width={1024}
+    grid={[8, 8]}
+    onResizeStart={resizeStart}
+    onResize={resize}
+    onResizeStop={resizeStop}
+  >
+    <div key="a">hello world</div>
+  </Layout>);
+
+  expect(wrapper);
+
+  handles.forEach(({ key }) => {
+    const handler = wrapper.findWhere(wrapper => wrapper.key() === `resizableHandle-${key}`);
+    expect(handler);
+    handler.simulate('mousedown', { clientX: 10, clientY: 10 });
+    mouseMove(100, 100, handler);
+
+    mouseUp(100, 100, handler);
+  });
+
+  expect(resizeStart).toHaveBeenCalledTimes(handles.length);
+  expect(resize).toHaveBeenCalledTimes(handles.length);
+  expect(resizeStop).toHaveBeenCalledTimes(handles.length);
+
+});
 
 test('basic render', () => {
   const wrapper = shallow(
@@ -109,5 +143,101 @@ test('click and select', () => {
 
   expect(fn).toBeCalled();
 
+  const state = wrapper.state() as IGridLayoutState;
+  expect(state.focusItem).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10 });
+});
 
+test('click and select group', () => {
+  const group ={
+    'a+b': {
+      id: 'a+b',
+      layout: [{ i: 'a'}, { i: 'b'}]
+    }
+  };
+  const wrapper = mount(<Layout
+    layout={[
+      { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+      { i: 'b', x: 25, y: 10, w: 10, h: 10 }
+    ]}
+    group={group}
+    width={1024}
+    grid={[10, 10]}
+  >
+    <div key="a" id="a">hello world</div>
+    <div key="b" id="b">hello world</div>
+  </Layout>);
+
+  expect(wrapper);
+  const handler = wrapper.find('#a');
+
+  expect(handler);
+  handler.simulate('mousedown', { clientX: 101, clientY: 101 });
+
+  expect((wrapper.state() as IGridLayoutState).focusItem).toEqual({ i: 'a+b', x: 10, y: 10, w: 25, h: 10 });
+
+  handler.simulate('mousedown', { clientX: 101, clientY: 101 });
+  handler.simulate('mouseup', { clientX: 101, clientY: 101 });
+
+  const state = wrapper.state() as IGridLayoutState;
+  expect(state.focusItem && state.focusItem.i).toEqual('a');
+});
+
+test('drag selected group', () => {
+  const group ={
+    'a+b': {
+      id: 'a+b',
+      layout: [{ i: 'a'}, { i: 'b'}]
+    }
+  };
+  const wrapper = mount(<Layout
+    layout={[
+      { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+      { i: 'b', x: 25, y: 10, w: 10, h: 10 }
+    ]}
+    group={group}
+    width={1024}
+    grid={[10, 10]}
+  >
+    <div key="a" id="a">hello world</div>
+    <div key="b" id="b">hello world</div>
+  </Layout>);
+
+  expect(wrapper);
+  const handler = wrapper.find('#a');
+  const b = wrapper.find('#b');
+
+  // mock getBoundingClientRect
+  handler.getDOMNode().getBoundingClientRect = () => ({
+    width: 100,
+    height: 100,
+    left: 100,
+    top: 100,
+    right: 200,
+    bottom: 200,
+  });
+
+  b.getDOMNode().getBoundingClientRect = () => ({
+    width: 100,
+    height: 100,
+    left: 250,
+    top: 100,
+    right: 350,
+    bottom: 200,
+  });
+
+  expect(handler);
+  handler.simulate('mousedown', { clientX: 100, clientY: 100 });
+
+  const state = wrapper.state() as IGridLayoutState;
+  expect(state.focusItem).toEqual({ i: 'a+b', x: 10, y: 10, w: 25, h: 10 });
+
+  expect(state.activeGroup && state.activeGroup.id).toEqual('a+b');
+
+  mouseMove(200, 200);
+  mouseUp(200, 200);
+
+  expect((wrapper.state() as IGridLayoutState).layout).toEqual([
+    { i: 'a', x: 20, y: 20, w: 10, h: 10, moved: true, parent: 'a+b' },
+    { i: 'b', x: 35, y: 20, w: 10, h: 10, moved: true, parent: 'a+b' }
+  ])
 });

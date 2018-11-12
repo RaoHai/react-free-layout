@@ -183,7 +183,6 @@ export default class GridItem extends Component<GridItemProps, {
 
           const parentRect = offsetParent.getBoundingClientRect();
           const clientRect = node.getBoundingClientRect();
-
           newPosition.left =
             clientRect.left - parentRect.left + offsetParent.scrollLeft;
           newPosition.top =
