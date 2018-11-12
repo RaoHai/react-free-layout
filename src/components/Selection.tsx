@@ -1,5 +1,6 @@
 import React from 'react';
-import { getTouchIdentifier, getControlPosition, noop } from '../utils/index';
+import ReactDOM from 'react-dom';
+import { getTouchIdentifier, getControlPosition, noop, OffsetParent, getOffsetParent, setTransform, Position } from '../utils/index';
 import DisposableComponent from '../utils/disposable';
 
 export type TouchEvent = React.SyntheticEvent<React.TouchEvent> | Event;
@@ -10,7 +11,7 @@ export interface MousePosition {
 }
 
 export interface SelectionProps {
-  offsetParent?: Element;
+  offsetParent?: OffsetParent;
   style?: {};
   onSelect: (start?: MousePosition, end?: MousePosition) => void;
   onSelectStart: () => void;
@@ -30,8 +31,7 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     onSelectEnd: noop,
     onSelect: noop,
   }
-  private dragWrapper?: Element | null = null;
-  private dragInner?: Element | null = null;
+  private dragWrapper = React.createRef<HTMLDivElement>();
 
   constructor(props: SelectionProps) {
     super(props);
@@ -43,7 +43,10 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     }
   }
   startSelection: React.MouseEventHandler<HTMLElement> = e => {
-    if (e.target !== this.dragWrapper && e.target !== this.dragInner) {
+    if (
+      e.target !== this.dragWrapper.current &&
+      e.target !== getOffsetParent(this.props.offsetParent)
+    ) {
       return;
     }
     const touchIdentifier = getTouchIdentifier(e as any);
@@ -110,27 +113,33 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
       return null;
     }
 
-    return <span className="drawing-handler" style={getSelectionRegion(start, end)}/>
+    return ReactDOM.createPortal(
+      <span
+        key="drawing-hanlder"
+        className="drawing-handler"
+        style={setTransform(getSelectionRegion(start, end))}
+      />,
+      getOffsetParent(this.props.offsetParent));
   }
 
   render() {
     const { children, style } = this.props;
+    const onlyChild = React.Children.only(children);
     return <div
       className="react-grid-layout-selectionw-wrapper"
       style={style}
-      ref={(ele: HTMLElement | null) => { this.dragWrapper = ele; }}
+      ref={this.dragWrapper}
       onMouseDown={this.startSelection}
     >
       {this.drawingHandler()}
-      {React.cloneElement(React.Children.only(children), {
+      {React.cloneElement(onlyChild, {
         onMouseDown: this.startSelection,
-        ref: (ele: HTMLElement | null) => { this.dragInner = ele; }
       })}
     </div>
   }
 }
 
-function getSelectionRegion(start: MousePosition, end: MousePosition): {} {
+function getSelectionRegion(start: MousePosition, end: MousePosition): Position {
   return {
     left: Math.min(start.x, end.x),
     top: Math.min(start.y, end.y),

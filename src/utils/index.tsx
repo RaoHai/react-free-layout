@@ -12,7 +12,7 @@ export interface Position {
 };
 
 export function noop() { return; }
-
+export type OffsetParent = Element | (() => Element | null);
 
 export function synchronizeLayoutWithChildren(
   initialLayout: Layout,
@@ -270,14 +270,19 @@ export function getControlPosition(
     return null;
   }
 
-  const offsetParent = selection.props.offsetParent ||
-    node.offsetParent ||
-    (node.ownerDocument && node.ownerDocument.body) || document.body;
-
-  return offsetXYFromParent(touchObj || e as any, offsetParent);
+  return offsetXYFromParent(touchObj || e as any, selection.props.offsetParent);
 }
 
-export function offsetXYFromParent(evt: { clientX: number, clientY: number }, offsetParent: Element) {
+export function getOffsetParent(offsetParent?: OffsetParent) {
+  if (typeof offsetParent === 'function') {
+    return offsetParent() || document.body;
+  }
+  return offsetParent && offsetParent.ownerDocument && offsetParent.ownerDocument.body || document.body;
+}
+
+export function offsetXYFromParent(evt: { clientX: number, clientY: number }, _offsetParent?: OffsetParent) {
+
+  const offsetParent = getOffsetParent(_offsetParent);
   const isBody = offsetParent === (offsetParent.ownerDocument && offsetParent.ownerDocument.body);
   const offsetParentRect = isBody ? {left: 0, top: 0} : offsetParent.getBoundingClientRect();
 

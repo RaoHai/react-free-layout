@@ -23,6 +23,7 @@ storiesOf("Basic Usage", module)
   </Layout>)
   .add('random layout', () => <Layout
     {...dragActions}
+    style={{ margin: '0 auto' }}
     layout={layout}
     width={1024}
     grid={[8, 8]}

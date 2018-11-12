@@ -357,6 +357,7 @@ export default class GridItem extends Component<GridItemProps, {
         onStop={this.onDragHandler("onDragStop")}
         disabled={!draggable}
         handle={this.props.handle}
+        offsetParent={document.body}
         cancel={
           ".react-resizable-handle" +
           (this.props.cancel ? "," + this.props.cancel : "")

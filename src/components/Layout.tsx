@@ -139,6 +139,7 @@ export type IGridLayoutProps = {
 export default class DeerGridLayout extends React.Component<IGridLayoutProps, IGridLayoutState> {
   public static defaultProps: Partial<IGridLayoutProps> = defaultProps;
   private mounted = false;
+  private offsetParent = React.createRef<HTMLDivElement>();
 
   constructor(props: IGridLayoutProps) {
     super(props);
@@ -559,7 +560,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   addTemporaryGroup = (selectedLayout: Layout) => {
-    if (!selectedLayout || !selectedLayout.length) {
+    if (!selectedLayout || selectedLayout.length <= 1) {
       return;
     }
 
@@ -812,6 +813,11 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     return groups;
   }
 
+  getOffsetParent = () => {
+    return this.offsetParent.current;
+  }
+
+
   render() {
     const { width, wrapperStyle = {}, style } = this.props;
     const { bottom } = this.state;
@@ -822,8 +828,12 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onSelect={this.selectLayoutItemByRect}
       onSelectEnd={this.endSelection}
       style={wrapperStyle}
+      offsetParent={this.getOffsetParent}
     >
-      <div style={{ ...style, width, height: (bottom + 10) * colWith }}>
+      <div
+        style={{ ...style, width, height: (bottom + 10) * colWith }}
+        ref={this.offsetParent}
+      >
         {this.group()}
         {React.Children.map(this.props.children,
           child => this.processGridItem(child, colWith)
