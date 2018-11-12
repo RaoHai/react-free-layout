@@ -813,7 +813,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   render() {
-    const { width, wrapperStyle = {} } = this.props;
+    const { width, wrapperStyle = {}, style } = this.props;
     const { bottom } = this.state;
     const colWith = this.calcColWidth();
 
@@ -823,7 +823,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onSelectEnd={this.endSelection}
       style={wrapperStyle}
     >
-      <div style={{ width, height: (bottom + 10) * colWith }}>
+      <div style={{ ...style, width, height: (bottom + 10) * colWith }}>
         {this.group()}
         {React.Children.map(this.props.children,
           child => this.processGridItem(child, colWith)
