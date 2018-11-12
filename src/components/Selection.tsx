@@ -12,7 +12,7 @@ export interface MousePosition {
 export interface SelectionProps {
   offsetParent?: Element;
   onSelect: (start?: MousePosition, end?: MousePosition) => void;
-  onSelectStart: (start?: MousePosition, end?: MousePosition) => void;
+  onSelectStart: () => void;
   onSelectEnd: (start?: MousePosition, end?: MousePosition) => void;
 }
 
@@ -55,7 +55,7 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
       start: position,
     });
 
-    this.props.onSelectStart(position, undefined);
+    this.props.onSelectStart();
 
     this.addEventListener('mousemove', this.moveSelection);
     this.addEventListener('mouseup', this.moveSelectionStop)

@@ -75,7 +75,7 @@ export function synchronizeLayoutWithChildren(
   }
 }
 
-export function getLayoutItem(layout: Layout, key: string): LayoutItem | undefined {
+export function getLayoutItem(layout: Layout, key: string | symbol): LayoutItem | undefined {
   return layout.find(({ i }) => i === key);
 }
 
@@ -187,6 +187,7 @@ export function cloneLayoutItem(layoutItem: LayoutItem): LayoutItem {
     // These can be null
     isDraggable: layoutItem.isDraggable,
     isResizable: layoutItem.isResizable,
+    parent: layoutItem.parent,
   };
 }
 

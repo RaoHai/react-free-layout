@@ -89,3 +89,25 @@ test('controlled layout', () => {
   expect(layout.state().activeDrag).toBeNull();
   expect((wrapper.state() as any).layout).toEqual(layout.state().layout);
 });
+
+test('click and select', () => {
+  const fn = jest.fn();
+  const wrapper = mount(<Layout
+    layout={[{ i: 'a', x: 10, y: 10, w: 10, h: 10 }]}
+    grid={[ 10, 10]}
+    width={1024}
+    onDragStart={fn}
+  >
+    <div key="a" id="single">a</div>
+  </Layout>);
+
+  expect(wrapper);
+  const handler = wrapper.find('#single');
+
+  expect(handler);
+  handler.simulate('mousedown');
+
+  expect(fn).toBeCalled();
+
+
+});

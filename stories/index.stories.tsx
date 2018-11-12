@@ -1,6 +1,6 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
+// import { action } from '@storybook/addon-actions';
 import { generateLayout, generateDOM, generateGroup } from '../test/testUtils';
 import Layout from '../src/components/Layout';
 import '../src/style/index.less';
@@ -8,8 +8,8 @@ import '../src/style/index.less';
 const layout = generateLayout();
 
 const dragActions = {
-  onDragStart: action('dragStart'),
-  onDragEnd: action('onDragEnd'),
+  // onDragStart: action('dragStart'),
+  // onDragEnd: action('onDragEnd'),
 };
 
 storiesOf("Basic Usage", module)
