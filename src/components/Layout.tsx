@@ -834,7 +834,12 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       offsetParent={this.getOffsetParent}
     >
       <div
-        style={{ ...style, width, height: (bottom + 10) * colWith }}
+        style={{
+          ...style,
+          width,
+          height: (bottom + 10) * colWith,
+          position: 'relative'
+        }}
         ref={this.offsetParent}
       >
         {this.group()}
