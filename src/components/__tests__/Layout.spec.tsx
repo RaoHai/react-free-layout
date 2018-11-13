@@ -3,7 +3,7 @@ import { shallow, mount } from 'enzyme';
 import toJSON from 'enzyme-to-json';
 import { generateLayout, generateDOM, mouseMove, mouseUp } from '../../../test/testUtils';
 import Layout, { IGridLayoutState } from '../Layout';
-import { handles } from '../Resizable/index';
+import { handles } from '../Resizer';
 const layout = generateLayout();
 
 
@@ -40,11 +40,13 @@ test('layoutResize', () => {
     onResize={resize}
     onResizeStop={resizeStop}
   >
-    <div key="a">hello world</div>
+    <div key="a" id="handler">hello world</div>
   </Layout>);
 
   expect(wrapper);
 
+  const handler = wrapper.find('#handler');
+  handler.simulate('mousedown');
   handles.forEach(({ key }) => {
     const handler = wrapper.findWhere(wrapper => wrapper.key() === `resizableHandle-${key}`);
     expect(handler);

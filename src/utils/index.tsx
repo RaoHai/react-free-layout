@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Layout, LayoutItem, Groups, temporaryGroupId, Group } from '../components/Layout';
 import Selection, { MousePosition } from '../components/Selection';
+import GridItem from '../components/GridItem';
 
 export type CompactType = 'horizontal' | 'vertical';
 export interface Position {
@@ -424,4 +425,46 @@ export function stretchLayout(layout: LayoutItem[], restrict: GridRect): LayoutI
     h: i.h * nh / h,
   }));
 
+}
+
+export function calcPosition(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  colWidth: number,
+  containerPadding: [number, number],
+  state?: GridItem['state'],
+  suppliter = Math.round
+) {
+
+  const out = {
+    left: suppliter(colWidth * x + containerPadding[0]),
+    top: suppliter(colWidth * y + containerPadding[1]),
+    // 0 * Infinity === NaN, which causes problems with resize constraints;
+    // Fix this if it occurs.
+    // Note we do it here rather than later because Math.round(Infinity) causes deopt
+    width:
+      w === Infinity
+        ? w
+        : Math.round(colWidth * w),
+    height:
+      h === Infinity
+        ? h
+        : Math.round(colWidth * h)
+  };
+
+  if (state && state.resizingPosition) {
+    out.width = Math.round(state.resizingPosition.width);
+    out.height = Math.round(state.resizingPosition.height);
+    out.top = suppliter(state.resizingPosition.top);
+    out.left = suppliter(state.resizingPosition.left);
+  }
+
+  if (state && state.dragging) {
+    out.top = suppliter(state.dragging.top);
+    out.left = suppliter(state.dragging.left);
+  }
+
+  return out;
 }

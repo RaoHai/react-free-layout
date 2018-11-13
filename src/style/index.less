@@ -68,13 +68,9 @@ body {
   user-select: none;
 }
 
-.react-grid-item.active > .react-resizable-handle {
-  visibility: visible;
-}
-
-.react-grid-item > .react-resizable-handle {
+.react-resizable-handle {
+  pointer-events: all;
   position: absolute;
-  visibility: hidden;
   width: 20px;
   height: 20px;
   bottom: 0;
@@ -164,7 +160,7 @@ body {
   }
 }
 
-.react-grid-item >.react-resizable-handle-x {
+.react-resizable-handle-x {
   background: none;
   cursor: ew-resize;
   right: 0;
@@ -173,7 +169,7 @@ body {
   bottom: 20px
 }
 
-.react-grid-item > .react-resizable-handle-y {
+.react-resizable-handle-y {
   background: none;
   cursor: ns-resize;
   left: 0;
@@ -186,3 +182,9 @@ body {
   border: 1px dashed #64b5f6;
 }
 
+
+
+.react-grid-layout-resizer {
+  position: relative;
+  pointer-events: none;
+}

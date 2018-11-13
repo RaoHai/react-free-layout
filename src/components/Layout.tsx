@@ -15,12 +15,14 @@ import {
   stretchLayout,
   mergeTemporaryGroup,
   hoistSelectionByParent,
+  calcPosition,
+  Position,
 } from '../utils';
 
-import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, Axis, GridResizeCallback } from './GridItem';
+import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, Axis } from './GridItem';
 import { DraggableData } from 'react-draggable';
 import Selection, { MousePosition } from './Selection';
-import { ResizeCallbacks, ResizeProps, SelectCallbacks } from './Resizable/index';
+import Resizer, { ResizeCallbacks, ResizeProps, SelectCallbacks, GridResizeCallback } from './Resizer';
 import { persist } from '../utils/events';
 
 export const temporaryGroupId = Symbol('template');
@@ -138,7 +140,6 @@ export type IGridLayoutProps = {
 & SelectCallbacks<SelectEventCallback>
 export default class DeerGridLayout extends React.Component<IGridLayoutProps, IGridLayoutState> {
   public static defaultProps: Partial<IGridLayoutProps> = defaultProps;
-  private mounted = false;
   private offsetParent = React.createRef<HTMLDivElement>();
 
   constructor(props: IGridLayoutProps) {
@@ -162,7 +163,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   componentDidMount() {
-    this.mounted = true;
+    this.setState({ mounted: true });
   }
 
   componentWillReceiveProps(nextProps: IGridLayoutProps) {
@@ -232,10 +233,12 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     i: symbol | string,
     { x, y, dx, dy }: { [key: string]: number },
     moveWithParent = true,
+    stateFocusItem: LayoutItem,
   ) => {
+    let focusItem = stateFocusItem;
     const l = getLayoutItem(layout, String(i));
     if (!l) {
-      return { layout, placeholder: null } ;
+      return { layout, focusItem, placeholder: null } ;
     }
 
     const cols = this.getCols(this.props);
@@ -247,7 +250,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       const { group } = this.state;
       const container: Group = group[l.parent];
       if (!container) {
-        return { layout, placeholder: null };
+        return { layout, focusItem, placeholder: null };
       }
       const moved = container.layout;
       moved.forEach(item => {
@@ -274,6 +277,15 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       };
 
       layout = this.mergeLayout(moved);
+      const rect = getBoundingRectFromLayout(layout.filter(i => i.parent && i.parent === focusItem.i));
+      focusItem = {
+        ...focusItem,
+        x: rect.x,
+        y: rect.y,
+        w: rect.right - rect.x,
+        h: rect.bottom - rect.y,
+        i: focusItem.i,
+      };
     } else {
       placeholder = {
         w: l.w,
@@ -295,23 +307,25 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       );
     }
 
-    return { layout, placeholder };
+    return { layout, placeholder, focusItem };
   }
 
   onDrag = (i: string, x: number, y: number, { e, node, dx, dy }: GridDragEvent) => {
-    const { oldDragItem, layout: stateLayout, activeGroup, focusItem } = this.state;
+    const { oldDragItem, layout: stateLayout, activeGroup, focusItem: stateFocusItem } = this.state;
     const l = getLayoutItem(stateLayout, i);
-    if (!l) {
+    if (!l || !stateFocusItem) {
       return;
     }
 
-    const { placeholder, layout } = this.moveElement(
+    const { placeholder, layout, focusItem } = this.moveElement(
       stateLayout,
       i,
       { x, y, dx, dy },
-      Boolean(activeGroup && focusItem && activeGroup.id == focusItem.i),
+      Boolean(activeGroup && stateFocusItem && activeGroup.id == stateFocusItem.i),
+      stateFocusItem,
     );
-
+    // const updated
+    // const focusItem
     if (oldDragItem) {
       persist(e);
       this.props.onDrag(layout, oldDragItem, l, placeholder, e, node);
@@ -319,6 +333,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     this.setState({
       layout,
+      focusItem,
       activeDrag: placeholder,
       dragging: true,
     });
@@ -333,13 +348,13 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
    * @param {Element} node The current dragging DOM element
    */
   onDragStop = (i: string, x: number, y: number, { e, node, dx, dy }: GridDragEvent) => {
-    const { oldDragItem, layout: stateLayout, dragging, oldActiveGroup, activeGroup } = this.state;
+    const { oldDragItem, layout: stateLayout, dragging, oldActiveGroup, activeGroup, focusItem: stateFocusItem } = this.state;
     const l = getLayoutItem(stateLayout, i);
-    if (!l) {
+    if (!l || !stateFocusItem) {
       return;
     }
 
-    const { layout } = this.moveElement(stateLayout, i, { x, y, dx, dy });
+    const { layout } = this.moveElement(stateLayout, i, { x, y, dx, dy }, true, stateFocusItem);
 
     if (!dragging && oldActiveGroup === activeGroup) {
       this.selectItem(l);
@@ -384,20 +399,15 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       activeGroup,
       focusItem,
     };
-    // this.setState({
-    //   activeGroup,
-    //   focusItem,
-    // }, () => {
-    //   this.props.onDragStart(layout, focusItem, focusItem, null, e, node);
-    // });
   }
 
-  onResizeStart = (i: string, { x, y, w, h }: ResizeProps, { e, node }: GridResizeEvent) => {
+  onResizeStart = (i: string | symbol, { x, y, w, h }: ResizeProps, { e, node }: GridResizeEvent) => {
     const { layout } = this.state;
     const l = getLayoutItem(layout, i);
     if (!l) {
       return;
     }
+
 
     this.setState({
       oldResizeItem: cloneLayoutItem(l),
@@ -407,7 +417,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     this.props.onResizeStart(layout, l, l, null, e, node);
   }
 
-  onResize = (i: string, { w, h, x, y }: ResizeProps, { e, node }: GridResizeEvent, axis: Axis) => {
+  onResize = (i: string | symbol, { w, h, x, y }: ResizeProps, { e, node }: GridResizeEvent, axis: Axis) => {
     const { layout, oldResizeItem } = this.state;
     const l = getLayoutItem(layout, i);
     if (!l) {
@@ -439,7 +449,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     });
   }
 
-  onResizeStop = (i: string, { x, y, w, h }: ResizeProps, { e, node }: GridResizeEvent) => {
+  onResizeStop = (i: string | symbol, { x, y, w, h }: ResizeProps, { e, node }: GridResizeEvent) => {
     const { layout, oldResizeItem, oldLayout } = this.state;
     const l = getLayoutItem(layout, i);
 
@@ -605,14 +615,14 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     if (!l) {
       return;
     }
-    const { mounted, props, state } = this;
+    const { props, state } = this;
 
     const {
       containerPadding, maxRows, width,
       isDraggable, isResizable,
     } = props;
 
-    const { selectedLayout, focusItem } = state;
+    const { selectedLayout, focusItem, mounted } = state;
 
     const cols = this.getCols();
 
@@ -639,9 +649,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onDragStop={this.onDragStop}
       onDragStart={this.onDragStart}
       onDrag={this.onDrag}
-      onResizeStart={this.onResizeStart}
-      onResize={this.onResize}
-      onResizeStop={this.onResizeStop}
       isResizable={resizable}
       isDraggable={draggable}
       x={l.x}
@@ -683,16 +690,13 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         margin={[0, 0]}
         containerPadding={containerPadding || margin}
         maxRows={maxRows}
-        rowHeight={this.calcColWidth()}
         isDraggable={false}
         isResizable={false}
         colWidth={this.calcColWidth()}
+        rowHeight={this.calcColWidth()}
         onDrag={noop}
         onDragStart={noop}
         onDragStop={noop}
-        onResize={noop}
-        onResizeStart={noop}
-        onResizeStop={noop}
         offsetParent={this.getOffsetParent}
       >
         <div />
@@ -724,9 +728,18 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         const { layout } = group;
 
         const strechedLayout = stretchLayout(layout, { x, y, right: x + w, bottom: y + h });
-
+        const rect = getBoundingRectFromLayout(strechedLayout.filter(i => i.parent && i.parent === focusItem.i));
+        const updatedFocusItem = {
+          ...focusItem,
+          x: rect.x,
+          y: rect.y,
+          w: rect.right - rect.x,
+          h: rect.bottom - rect.y,
+          i: focusItem.i,
+        };
         const newState = {
           layout: this.mergeLayout(strechedLayout),
+          focusItem: updatedFocusItem,
         };
 
         if (handlerName === 'onResizeStop') {
@@ -777,9 +790,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onDrag={noop}
       onDragStart={noop}
       onDragStop={noop}
-      onResize={this.onContainerHandler('onResize')}
-      onResizeStart={this.onContainerHandler('onResizeStart')}
-      onResizeStop={noop}
       margin={[0, 0]}
       active={active}
       selected={selected}
@@ -788,9 +798,9 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       <div />
     </GridItem>
   }
+
   group() {
     const { selecting, group } = this.state;
-
     const groups = [];
 
     if (!selecting && group[temporaryGroupId] && group[temporaryGroupId].layout.length) {
@@ -820,10 +830,95 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     return this.offsetParent.current;
   }
 
+  getWHCalculator = () => {
+    const colWidth = this.calcColWidth();
+    const cols = this.getCols();
+    const rowHeight = colWidth;
+    const { maxRows } = this.props;
+    return function calcWH(
+      { x, y, height, width }: Pick<Position, 'width' | 'height'> & { x: number, y: number },
+      suppliter = Math.round
+    ): { w: number; h: number } {
+
+      let w = suppliter(width / colWidth);
+      let h = suppliter(height / rowHeight);
+
+      // Capping
+      w = Math.max(Math.min(w, cols - x), 0);
+      h = Math.max(Math.min(h, maxRows - y), 0);
+      return { w, h };
+    }
+  }
+
+  getPositionCalculator = () => {
+    return (x: number, y: number, w: number, h: number) =>
+    calcPosition(x, y, w, h, this.calcColWidth(), [0, 0]);
+  }
+
+  getXYCalculator = () => {
+    const { maxRows } = this.props;
+    const cols = this.getCols();
+    const colWidth = this.calcColWidth();
+    const rowHeight = colWidth;
+    return function calcXY(
+      top: number,
+      left: number,
+      w: number,
+      h: number,
+      suppliter = Math.round,
+    ) {
+      let x = suppliter(left / colWidth);
+      let y = suppliter(top / rowHeight);
+
+      // Capping
+      x = Math.max(Math.min(x, cols - w), 0);
+      y = Math.max(Math.min(y, maxRows - h), 0);
+
+      return { x, y };
+    }
+  }
+
+  resizer = () => {
+    const { focusItem, activeGroup } = this.state;
+    if (!focusItem) {
+      return null;
+    }
+
+    const { i, x, y, w, h } = focusItem;
+
+    const resizingGroup = activeGroup && activeGroup.id === focusItem.i;
+    const resizeCallbacks = resizingGroup ? {
+      onResize: this.onContainerHandler('onResize'),
+      onResizeStart: this.onContainerHandler('onResizeStart'),
+      onResizeStop: noop,
+    } : {
+      onResize: this.onResize,
+      onResizeStart: this.onResizeStart,
+      onResizeStop: this.onResizeStop,
+    };
+
+    const colWidth = this.calcColWidth();
+    return <Resizer
+      i={i}
+      x={x}
+      y={y}
+      w={w}
+      h={h}
+      {...resizeCallbacks}
+      className={resizingGroup ? 'group-resizer' : 'item-resizer'}
+      offsetParent={this.offsetParent.current}
+      calcXY={this.getXYCalculator()}
+      calcPosition={this.getPositionCalculator()}
+      calcWH={this.getWHCalculator()}
+      colWidth={colWidth}
+      rowHeight={colWidth}
+    />;
+  }
+
 
   render() {
     const { width, wrapperStyle = {}, style } = this.props;
-    const { bottom } = this.state;
+    const { bottom, mounted } = this.state;
     const colWith = this.calcColWidth();
 
     return <Selection
@@ -842,11 +937,14 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         }}
         ref={this.offsetParent}
       >
-        {this.group()}
-        {React.Children.map(this.props.children,
-          child => this.processGridItem(child, colWith)
-        )}
-        {this.placeholder()}
+        {mounted ? <>
+          {this.group()}
+          {React.Children.map(this.props.children,
+            child => this.processGridItem(child, colWith)
+          )}
+          {this.placeholder()}
+          {this.resizer()}
+        </> : null}
       </div>
     </Selection>
   }
