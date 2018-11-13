@@ -243,3 +243,25 @@ test('drag selected group', () => {
     { i: 'b', x: 35, y: 20, w: 10, h: 10, moved: true, parent: 'a+b' }
   ])
 });
+
+test('contextMenu', () => {
+  const fn = jest.fn();
+  const wrapper = mount(<Layout
+    layout={[{ i: 'a', x: 10, y: 10, w: 10, h: 10}]}
+    width={1024}
+    grid={[8, 8]}
+    onContextMenu={fn}
+  >
+    <div key="a" id="a">hello world</div>
+  </Layout>);
+
+  expect(wrapper);
+
+  const handler = wrapper.find('#a');
+  handler.simulate('mousedown');
+  handler.simulate('contextmenu');
+
+  expect(fn).toBeCalled();
+  expect(fn.mock.calls[0][0]).toEqual('a');
+  expect(fn.mock.calls[0][1]).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10});
+});

@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, MouseEventHandler } from 'react';
 import { DraggableCore, DraggableData } from 'react-draggable';
 import classNames from 'classnames';
 import { LayoutItem } from './Layout';
@@ -64,6 +64,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
     cancel: string;
     active?: boolean;
     selected?: boolean;
+    onContextMenu?: MouseEventHandler;
   };
 
 export default class GridItem extends Component<GridItemProps, {
@@ -190,7 +191,7 @@ export default class GridItem extends Component<GridItemProps, {
     const {
       margin, colWidth, containerPadding, rowHeight, isDraggable = true,
       x, y, w, h, z,
-      children, className, style, active, selected,
+      children, className, style, active, selected, onContextMenu,
     } = this.props;
 
     const out = {
@@ -230,6 +231,7 @@ export default class GridItem extends Component<GridItemProps, {
         ...child.props.style,
         ...setTransform(out, z),
       },
+      onContextMenu,
     });
 
     newChild = this.mixinDraggable(newChild, isDraggable);

@@ -1,4 +1,4 @@
-import React, { ReactChild } from 'react';
+import React, { ReactChild, MouseEventHandler } from 'react';
 import isEqual from 'lodash.isequal';
 import {
   synchronizeLayoutWithChildren,
@@ -19,7 +19,7 @@ import {
   Position,
 } from '../utils';
 
-import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, Axis } from './GridItem';
+import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, Axis, GridDragCallback } from './GridItem';
 import { DraggableData } from 'react-draggable';
 import Selection, { MousePosition } from './Selection';
 import Resizer, { ResizeCallbacks, ResizeProps, SelectCallbacks, GridResizeCallback } from './Resizer';
@@ -92,6 +92,7 @@ const defaultProps = {
   isDraggable: true,
   isResizable: true,
   onLayoutChange: () => {},
+  onContextMenu: noop,
 }
 
 
@@ -135,6 +136,7 @@ export type IGridLayoutProps = {
   isDraggable?: boolean;
   isResizable?: boolean;
   onLayoutChange: (layout: Layout) => void;
+  onContextMenu?: (i: symbol | string, config: LayoutItem, ev: React.MouseEvent) => void;
 } & GridDragCallbacks<GridDragEventCallback>
 & ResizeCallbacks<GridResizeEventCallback>
 & SelectCallbacks<SelectEventCallback>
@@ -467,6 +469,20 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     this.onLayoutMaybeChanged(layout, oldLayout);
   }
 
+  onContextMenu: MouseEventHandler = e => {
+    const { focusItem } = this.state;
+    if (!this.props.onContextMenu || !focusItem) {
+      return;
+    }
+
+    persist(e);
+    return this.props.onContextMenu(
+      focusItem.i,
+      focusItem,
+      e,
+    )
+  }
+
   // 点击，仅处理多选时再点击的行为
   selectItem = (l: LayoutItem) => {
     if (!l || !l.parent) {
@@ -618,14 +634,10 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     const { props, state } = this;
 
     const {
-      containerPadding, maxRows, width,
       isDraggable, isResizable,
     } = props;
 
-    const { selectedLayout, focusItem, mounted } = state;
-
-    const cols = this.getCols();
-
+    const { selectedLayout, focusItem } = state;
     const draggable = Boolean(
       !l.static && isDraggable && (l.isDraggable || l.isDraggable == null)
     );
@@ -633,33 +645,19 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       !l.static && isResizable && (l.isResizable || l.isResizable == null)
     );
 
-    const active = focusItem && focusItem.i === String(key);
+    const active = Boolean(focusItem && focusItem.i === String(key));
     const selected = Boolean(selectedLayout && selectedLayout.find(item => item.i === String(key)));
 
-    return <GridItem
-      usePercentages={mounted}
-      colWidth={colWidth}
-      rowHeight={colWidth}
-      margin={[0, 0]}
-      containerPadding={containerPadding}
-      containerWidth={width}
-      i={String(key)}
-      cols={cols}
-      maxRows={maxRows}
-      onDragStop={this.onDragStop}
-      onDragStart={this.onDragStart}
-      onDrag={this.onDrag}
-      isResizable={resizable}
-      isDraggable={draggable}
-      x={l.x}
-      y={l.y}
-      w={l.w}
-      h={l.h}
-      z={l.z}
-      active={!!active}
-      selected={selected}
-      offsetParent={this.getOffsetParent}
-    >{child}</GridItem>
+    return this.createGridItem(l, {
+      onDragStop: this.onDragStop,
+      onDragStart: this.onDragStart,
+      onDrag: this.onDrag,
+    }, child, {
+      isDraggable: draggable,
+      isResizable: resizable,
+      active,
+      selected,
+    });
   }
 
   placeholder() {
@@ -667,41 +665,53 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     if (!activeDrag) {
       return null;
     }
-    const {
-      width,
-      containerPadding,
-      maxRows,
-    } = this.props;
 
+    return this.createGridItem(
+      activeDrag,
+      {
+        onDrag: noop,
+        onDragStart: noop,
+        onDragStop: noop,
+      },
+      <div />,
+      {
+        className: 'react-grid-placeholder',
+      });
+
+  }
+
+  createGridItem = (
+    activeDrag: LayoutItem,
+    events: GridDragCallbacks<GridDragCallback>,
+    children: ReactChild,
+    extProps?: Partial<GridItem['props']>,
+  ) => {
+    const { width, containerPadding, maxRows } = this.props;
     const cols = this.getCols();
-    const margin = [0, 0];
-    // {...this.state.activeDrag} is pretty slow, actually
-    return (
-      <GridItem
-        w={activeDrag.w}
-        h={activeDrag.h}
-        x={activeDrag.x}
-        y={activeDrag.y}
-        i={activeDrag.i}
-        z={activeDrag.z}
-        className="react-grid-placeholder"
-        containerWidth={width}
-        cols={cols}
-        margin={[0, 0]}
-        containerPadding={containerPadding || margin}
-        maxRows={maxRows}
-        isDraggable={false}
-        isResizable={false}
-        colWidth={this.calcColWidth()}
-        rowHeight={this.calcColWidth()}
-        onDrag={noop}
-        onDragStart={noop}
-        onDragStop={noop}
-        offsetParent={this.getOffsetParent}
-      >
-        <div />
-      </GridItem>
-    );
+    const colWidth = this.calcColWidth();
+
+    return <GridItem
+      {...extProps}
+      key={String(activeDrag.i)}
+      i={activeDrag.i}
+      w={activeDrag.w}
+      h={activeDrag.h}
+      x={activeDrag.x}
+      y={activeDrag.y}
+      z={activeDrag.z}
+      containerWidth={width}
+      cols={cols}
+      margin={[0, 0]}
+      containerPadding={containerPadding}
+      maxRows={maxRows}
+      colWidth={colWidth}
+      rowHeight={colWidth}
+      offsetParent={this.getOffsetParent}
+      onContextMenu={this.onContextMenu}
+      {...events}
+    >
+      {children}
+    </GridItem>;
   }
 
   onContainerHandler(handlerName: keyof ResizeCallbacks<GridResizeCallback>): GridResizeCallback {
@@ -763,40 +773,28 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
   renderGroupItem = (key: string | symbol, rect: GridRect) => {
     const { activeGroup, focusItem } = this.state;
-    const {
-      width,
-      containerPadding,
-      maxRows,
-      grid,
-    } = this.props;
 
     const selected = Boolean(activeGroup && activeGroup.id === key); // 是否激活
     const active = Boolean(focusItem && selected && focusItem.i === key);
 
-    return <GridItem
-      i={key}
-      key={String(key)}
-      cols={this.getCols()}
-      colWidth={this.calcColWidth()}
-      x={rect.x}
-      y={rect.y}
-      w={rect.right - rect.x}
-      h={rect.bottom - rect.y}
-      className="react-grid-layout-group react-selection-placeholder"
-      maxRows={maxRows}
-      rowHeight={grid[1]}
-      containerWidth={width}
-      containerPadding={containerPadding}
-      onDrag={noop}
-      onDragStart={noop}
-      onDragStop={noop}
-      margin={[0, 0]}
-      active={active}
-      selected={selected}
-      offsetParent={this.getOffsetParent}
-    >
-      <div />
-    </GridItem>
+    return this.createGridItem(
+      {
+        i: key,
+        x: rect.x,
+        y: rect.y,
+        w: rect.right - rect.x,
+        h: rect.bottom - rect.y,
+      },
+      {
+        onDrag: noop,
+        onDragStart: noop,
+        onDragStop: noop,
+      },
+      <div />,
+      {
+        selected,
+        active,
+      });
   }
 
   group() {

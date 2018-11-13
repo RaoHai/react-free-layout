@@ -468,3 +468,7 @@ export function calcPosition(
 
   return out;
 }
+
+export function isTemporaryGroup(item: LayoutItem) {
+  return item.i === temporaryGroupId;
+}
