@@ -41,7 +41,7 @@ test('GroupAction: create group', () => {
 
   expect(wrapper);
 
-  const eventTarget =  wrapper.find('.react-grid-layout-selectionw-wrapper > div').at(0);
+  const eventTarget =  wrapper.find('.react-grid-layout-selection-wrapper > div').at(0);
   expect(eventTarget);
   selectRange(eventTarget, { x: 0, y: 0}, { x: 300, y: 100 });
 

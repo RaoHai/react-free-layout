@@ -116,7 +116,7 @@ test.only('select single item and group', () => {
 
   expect(wrapper);
 
-  const eventTarget =  wrapper.find('.react-grid-layout-selectionw-wrapper > div').at(0);
+  const eventTarget =  wrapper.find('.react-grid-layout-selection-wrapper > div').at(0);
   selectRange(eventTarget, { x: 10, y: 10 }, { x: 300, y: 200 });
 
   const state = wrapper.state() as IGridLayoutState;

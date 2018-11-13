@@ -114,11 +114,14 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     }
 
     return ReactDOM.createPortal(
-      <span
-        key="drawing-hanlder"
-        className="drawing-handler"
-        style={setTransform(getSelectionRegion(start, end))}
-      />,
+      <>
+        <div className="react-grid-layout-selection-helper" />
+        <span
+          key="drawing-hanlder"
+          className="drawing-handler"
+          style={setTransform(getSelectionRegion(start, end))}
+        />
+      </>,
       getOffsetParent(this.props.offsetParent));
   }
 
@@ -126,7 +129,7 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     const { children, style } = this.props;
     const onlyChild = React.Children.only(children);
     return <div
-      className="react-grid-layout-selectionw-wrapper"
+      className="react-grid-layout-selection-wrapper"
       style={style}
       ref={this.dragWrapper}
       onMouseDown={this.startSelection}
