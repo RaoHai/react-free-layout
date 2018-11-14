@@ -265,3 +265,46 @@ test('contextMenu', () => {
   expect(fn.mock.calls[0][0]).toEqual('a');
   expect(fn.mock.calls[0][1]).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10});
 });
+
+it('delete selected item', () => {
+  class App extends React.Component {
+    state = {
+      layout: [
+        { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+        { i: 'b', x: 25, y: 10, w: 10, h: 10 }
+      ],
+    }
+
+    delete = () => {
+      this.setState({ layout: this.state.layout.filter(i => i.i !== 'a') })
+    }
+
+    render() {
+      const { layout } = this.state;
+      return <Layout
+        layout={layout}
+        width={1024}
+        grid={[8, 8]}
+      >
+        {layout.map(({ i }) => <div key={i} id={i} >{i}</div>)}
+      </Layout>
+    }
+  }
+
+  const wrapper = mount(<App />);
+  const layout = wrapper.find(Layout);
+
+  expect(wrapper);
+  expect(layout);
+
+  const handler = wrapper.find('#a');
+  expect(handler);
+
+  handler.simulate('mousedown');
+
+  expect(layout.state().focusItem).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10 });
+
+  (wrapper.instance() as any).delete();
+
+  expect(layout.state().focusItem).toBeNull()
+});

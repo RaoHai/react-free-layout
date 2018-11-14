@@ -1,10 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Layout, LayoutItem, Groups, temporaryGroupId, Group } from '../components/Layout';
+import { Layout, LayoutItem, Groups, temporaryGroupId, Group, IGridLayoutProps } from '../components/Layout';
 import Selection, { MousePosition } from '../components/Selection';
 import GridItem from '../components/GridItem';
 
-export type CompactType = 'horizontal' | 'vertical';
 export interface Position {
   left: number,
   top: number,
@@ -19,17 +18,19 @@ export function synchronizeLayoutWithChildren(
   initialLayout: Layout,
   children: JSX.Element[] | JSX.Element,
   cols: number,
-  compactType: CompactType = 'vertical',
   group: Groups,
+  focusItem?: LayoutItem | null,
 ): {
   layout: Layout;
   maxZ: number;
   bottom: number;
   group: Groups,
+  focusItem?: LayoutItem | null,
 } {
   let layout: Layout = initialLayout;
   let maxZ = -Infinity;
 
+  let focusItemVisited = false;
   const parentMap = {};
 
   for (const key in group) {
@@ -38,6 +39,9 @@ export function synchronizeLayoutWithChildren(
       g.id = g.id || key;
       g.layout.forEach(i => parentMap[i.i] = key);
       g.layout = [];
+      if (focusItem && focusItem.i === key) {
+        focusItemVisited = true;
+      }
     }
   }
 
@@ -64,11 +68,15 @@ export function synchronizeLayoutWithChildren(
       const g = child.props["data-grid"];
       layout[index] = g ? g : { w: 1, h: 1, x: 0, y: bottom(layout), i: String(child.key) };
     }
+    if (focusItem && layout[index].i === focusItem.i) {
+      focusItemVisited = true;
+    }
   });
 
 
   layout = correctBounds(layout, { cols });
   return {
+    focusItem: focusItemVisited ? focusItem : null,
     layout,
     maxZ,
     bottom: bottom(layout),
@@ -317,7 +325,7 @@ export function getRectFromPoints(start: MousePosition, end: MousePosition, colW
 export function groupLayout(layout: Layout, id: string): Group {
   return {
     id,
-    layout: layout.map(i => ({ ...i, parent: id })),
+    layout: layout.map(i => ({ ...i, parent: id, _parent: id })),
     rect: getBoundingRectFromLayout(layout),
   };
 }
@@ -364,6 +372,21 @@ export function hoistSelectionByParent(
   return parents.size ? Array.from(parents).reduce((list, parentId) =>
     group[parentId] ? list.concat( group[parentId].layout || []) : []
   , []).concat(singleItems) : layout;
+}
+
+export function mergeLayout(layout: Layout, newLayout: Layout, extraValue?: (i: LayoutItem) => LayoutItem | {}) {
+
+  if (!newLayout || !newLayout.length) {
+    return layout;
+  }
+
+  return layout.map(item => {
+    const found = newLayout.find(n => n.i === item.i);
+    if (found) {
+      return Object.assign(item, found, typeof extraValue === 'function' ? extraValue(found) : extraValue);
+    }
+    return item;
+  });
 }
 
 export function getBoundingRectFromLayout(layout: Layout): GridRect {
@@ -471,4 +494,42 @@ export function calcPosition(
 
 export function isTemporaryGroup(item: LayoutItem) {
   return item.i === temporaryGroupId;
+}
+
+
+export function getCols({ width, grid }: Pick<IGridLayoutProps, 'width' | 'grid'>) {
+  return Math.ceil(width / grid[0]);
+}
+
+export function calcColWidth(
+  width: number,
+  grid: IGridLayoutProps['grid'],
+  containerPadding: IGridLayoutProps['containerPadding'],
+) {
+  // const { containerPadding, grid, width } = this.props;
+  const cols = getCols({ width, grid });
+  const calcColWidth = (width - containerPadding[0] * 2) / cols;
+  return calcColWidth;
+}
+
+export function percentile(layout: Layout, cols: number, height?: number) {
+  const h = height ? bottom(layout) : 1;
+  return layout.map(i => ({
+    ...i,
+    x: i.x / cols,
+    y: i.y / h,
+    w: i.w / cols,
+    h: i.h / h,
+  }));
+}
+
+export function layoutlize(layout: Layout, cols: number, unitHeight?: number) {
+  const h = unitHeight ? unitHeight : 1;
+  return layout.map(i => ({
+    ...i,
+    x: Math.round(i.x * cols),
+    y: Math.round(i.y * h),
+    w: Math.round(i.w * cols),
+    h: Math.round(i.h * h),
+  }));
 }

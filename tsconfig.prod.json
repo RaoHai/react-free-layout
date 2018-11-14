@@ -4,6 +4,7 @@
     "outDir": "lib",
     "target": "es5",
     "rootDir": "src",
+    "declaration": true
   },
   "exclude": [
     "**/*.spec.tsx",

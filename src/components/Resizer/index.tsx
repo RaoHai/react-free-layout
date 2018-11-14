@@ -176,7 +176,9 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
         layout = { x, y, w: _w, h: _h };
       }
 
+      // const resizin
       this.setState({
+        resizing: handlerName === 'onResizeStop' ? false : true,
         resizingPosition: handlerName === 'onResizeStop' ? undefined : size,
         resizingLayout: handlerName === 'onResizeStop' ? undefined : layout,
       });
@@ -193,23 +195,26 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
 
   render() {
     const { draggableOpts, calcPosition, className } = this.props;
-    const { x, y, w, h } = this.state;
+    const { x, y, w, h, resizing } = this.state;
     const position = calcPosition(x, y, w, h);
     const style = setTransform(position);
     const cls = classnames('react-grid-layout-resizer', className);
     return (
-      <div className={cls} style={style}>
-      {handles.map(({ key, direction }) => <DraggableCore
-        {...draggableOpts}
-        key={`resizableHandle-${key}`}
-        onStop={this.resizeHandler('onResizeStop', { key, direction })}
-        onStart={this.resizeHandler('onResizeStart', { key, direction })}
-        onDrag={this.resizeHandler('onResize', { key, direction })}
-        offsetParent={document.body}
-      >
-        <span className={`react-resizable-handle react-resizable-handle-${key}`} />
-      </DraggableCore>)}
-      </div>
+      <>
+        { resizing ? <div className="react-grid-layout-selection-helper" /> : null }
+        <div className={cls} style={style}>
+          {handles.map(({ key, direction }) => <DraggableCore
+            {...draggableOpts}
+            key={`resizableHandle-${key}`}
+            onStop={this.resizeHandler('onResizeStop', { key, direction })}
+            onStart={this.resizeHandler('onResizeStart', { key, direction })}
+            onDrag={this.resizeHandler('onResize', { key, direction })}
+            offsetParent={document.body}
+          >
+            <span className={`react-resizable-handle react-resizable-handle-${key}`} />
+          </DraggableCore>)}
+        </div>
+      </>
     )
   }
 }
