@@ -150,10 +150,6 @@ export default class GridItem extends Component<GridItemProps, {
           newPosition.top = dragging.top;
           this.setState({ dragging: null });
         break;
-        default:
-          throw new Error(
-            "onDragHandler called with unrecognized handlerName: " + handlerName
-          );
       }
 
       const { x, y } = this.calcXY(newPosition.top, newPosition.left);

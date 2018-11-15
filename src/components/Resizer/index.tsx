@@ -59,7 +59,6 @@ LayoutItem & {
   className?: {};
   offsetParent?: OffsetParent | null;
   draggableOpts?: {}
-  calcXY: (...args: any) => { x: number, y: number };
   calcPosition: (...args: any) => Position;
   calcWH: (...args: any) => { w: number, h: number };
   colWidth: number;

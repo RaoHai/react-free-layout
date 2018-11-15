@@ -62,6 +62,10 @@ export function generateGroup(layouts: any[]) {
   return groups;
 }
 
+export function mouseDown(node: ReactWrapper, clientX: number, clientY: number) {
+  node.simulate('mousedown', { clientX, clientY });
+}
+
 export function mouseMove(x: number, y: number, node?: Element | ReactWrapper) {
   const doc = node && (node as Element).ownerDocument || document;
   const evt = doc.createEvent('MouseEvents');

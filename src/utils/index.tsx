@@ -49,6 +49,9 @@ export function synchronizeLayoutWithChildren(
     if (!React.isValidElement(child)) {
       return;
     }
+    if (!child.key) {
+      return;
+    }
     const definition = getLayoutItem(layout, String(child.key));
     if (definition) {
       maxZ = Math.max(maxZ, definition.z || 0);
@@ -72,7 +75,6 @@ export function synchronizeLayoutWithChildren(
       focusItemVisited = true;
     }
   });
-
 
   layout = correctBounds(layout, { cols });
   return {
@@ -276,7 +278,7 @@ export function getControlPosition(
   const touchObj = typeof identifier === 'number' ? getTouch(e, identifier) : null;
   const node = ReactDOM.findDOMNode(selection) as HTMLElement;
   if (!node) {
-    return null;
+    return;
   }
 
   return offsetXYFromParent(touchObj || e as any, selection.props.offsetParent);

@@ -1,135 +1,192 @@
 import React from 'react';
 import { mount } from 'enzyme';
-import { mouseMove, mouseUp, generateDOM, selectRange } from '../../../test/testUtils';
+import { mouseDown, mouseMove, mouseUp, generateDOM, selectRange } from '../../../test/testUtils';
 import Selection from '../Selection';
 import Layout, { temporaryGroupId, IGridLayoutState, Group, LayoutItem } from '../Layout';
-import { groupLayout } from '../../utils/index';
+import { groupLayout, splitGroup } from '../../utils/index';
 
 
-test('Selection', () => {
-  const selectfn = jest.fn();
-  const selectEndFn = jest.fn();
+describe('Selection', () => {
+  test('Selection', () => {
+    const selectfn = jest.fn();
+    const selectEndFn = jest.fn();
 
-  const wrapper = mount(<Selection
-    onSelect={selectfn}
-    onSelectEnd={selectEndFn}
-  >
-    <div />
-  </Selection>);
+    const wrapper = mount(<Selection
+      onSelect={selectfn}
+      onSelectEnd={selectEndFn}
+    >
+      <div />
+    </Selection>);
 
-  expect(wrapper).not.toBeNull();
-  const target = wrapper.find('div').at(0);
+    expect(wrapper).not.toBeNull();
+    const target = wrapper.find('div').at(0);
 
-  expect(wrapper).not.toBeNull();
-  expect(target).not.toBeNull();
+    expect(wrapper).not.toBeNull();
+    expect(target).not.toBeNull();
 
-  target.simulate('mousedown', { clientX: 10, clientY: 10 });
+    target.simulate('mousedown', { clientX: 10, clientY: 10 });
 
-  expect((wrapper.state() as any).dragging).toEqual(true);
-  expect((wrapper.state() as any).start).toEqual({ x: 10, y: 10 });
+    expect((wrapper.state() as any).dragging).toEqual(true);
+    expect((wrapper.state() as any).start).toEqual({ x: 10, y: 10 });
 
-  mouseMove(100, 200);
+    mouseMove(100, 200);
 
-  expect((wrapper.state() as any).dragging).toEqual(true);
-  expect((wrapper.state() as any).end).toEqual({ x: 100, y: 200 });
+    expect((wrapper.state() as any).dragging).toEqual(true);
+    expect((wrapper.state() as any).end).toEqual({ x: 100, y: 200 });
 
-  mouseUp(110, 210);
+    mouseUp(110, 210);
 
-  expect((wrapper.state() as any).dragging).toEqual(false);
-  expect((wrapper.state() as any).end).toBeNull();
+    expect((wrapper.state() as any).dragging).toEqual(false);
+    expect((wrapper.state() as any).end).toBeNull();
 
-  expect(selectfn.mock.calls.length).toEqual(1);
-  expect(selectfn.mock.calls[0]).toEqual([ {"x": 10, "y": 10}, {"x": 100, "y": 200} ]);
+    expect(selectfn.mock.calls.length).toEqual(1);
+    expect(selectfn.mock.calls[0]).toEqual([ {"x": 10, "y": 10}, {"x": 100, "y": 200} ]);
 
-  expect(selectEndFn.mock.calls.length).toEqual(1);
-  expect(selectEndFn.mock.calls[0]).toEqual([ {"x": 10, "y": 10}, {"x": 110, "y": 210} ]);
-});
+    expect(selectEndFn.mock.calls.length).toEqual(1);
+    expect(selectEndFn.mock.calls[0]).toEqual([ {"x": 10, "y": 10}, {"x": 110, "y": 210} ]);
+
+    wrapper.unmount();
+  });
 
 
-test('layout selection', () => {
-  const wrapper = mount(<Layout
-    layout={[
+  test('layout selection', () => {
+    const wrapper = mount(<Layout
+      layout={[
+        { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+        { i: 'b', x: 25, y: 10, w: 10, h: 10 }
+      ]}
+      width={1024}
+      grid={[10, 10]}
+    >
+      <div key="a" id="target">hello world</div>
+      <div key="b" id="target">hello world</div>
+    </Layout>);
+
+    const eventTarget =  wrapper.find('div').at(0);
+
+    expect(eventTarget).not.toBeNull();
+
+    eventTarget.simulate('mousedown', { clientX: 10, clientY: 10 });
+
+    expect((wrapper.state() as any).selecting).toEqual(true);
+
+    mouseMove(350, 200);
+
+    expect((wrapper.state() as any).activeDrag);
+
+    mouseUp(350, 210);
+
+    const state = wrapper.state() as any;
+    expect(state.selecting).toEqual(false);
+    expect(state.selectedLayout).toHaveLength(2);
+
+    // temporary group exists
+    expect(state.group[temporaryGroupId]).not.toBeUndefined();
+
+    eventTarget.simulate('mousedown', { clientX: 0, clientY: 0 });
+    expect(state.group[temporaryGroupId]).toBeUndefined();
+  });
+
+  test('select single item and group', () => {
+    /**
+     *  |---|  |---|
+     *  | a |  | c |
+     *  |---|  |---|
+     *  |---|
+     *  | b |
+     *  |---|
+     */
+    const layout = [
       { i: 'a', x: 10, y: 10, w: 10, h: 10 },
-      { i: 'b', x: 25, y: 10, w: 10, h: 10 }
-    ]}
-    width={1024}
-    grid={[10, 10]}
-  >
-    <div key="a" id="target">hello world</div>
-    <div key="b" id="target">hello world</div>
-  </Layout>);
+      { i: 'b', x: 10, y: 25, w: 10, h: 10 },
+      { i: 'c', x: 25, y: 10, w: 10, h: 10 },
+    ];
+    const group = {
+      'a+b': {
+        id: 'a+b',
+        layout: [{ i: 'a'}, { i: 'b'}]
+      }
+    };
 
-  const eventTarget =  wrapper.find('div').at(0);
+    const fn = jest.fn();
+    const wrapper = mount(<Layout
+      layout={layout}
+      group={group}
+      width={1024}
+      grid={[10, 10]}
+      onLayoutSelect={fn}
+    >
+      {generateDOM(layout)}
+    </Layout>);
 
-  expect(eventTarget).not.toBeNull();
+    expect(wrapper);
 
-  eventTarget.simulate('mousedown', { clientX: 10, clientY: 10 });
+    const eventTarget =  wrapper.find('.react-grid-layout-selection-wrapper > div').at(0);
+    selectRange(eventTarget, { x: 10, y: 10 }, { x: 300, y: 200 });
 
-  expect((wrapper.state() as any).selecting).toEqual(true);
+    const state = wrapper.state() as IGridLayoutState;
+    expect(state.selectedLayout).toHaveLength(3);
+    expect(((state.activeGroup) as Group).id).toEqual(temporaryGroupId);
+    expect(((state.focusItem) as LayoutItem).i).toEqual(temporaryGroupId);
 
-  mouseMove(350, 200);
+    expect(fn).toHaveBeenCalled();
 
-  expect((wrapper.state() as any).activeDrag);
+    const selectedLayout = fn.mock.calls[0][0];
+    expect(selectedLayout).toHaveLength(3);
+    const newGroup = groupLayout(selectedLayout, 'newGroup');
 
-  mouseUp(350, 210);
+    expect(newGroup.layout).toHaveLength(3);
+    expect(newGroup.layout.every(i => i.parent === 'newGroup'));
 
-  const state = wrapper.state() as any;
-  expect(state.selecting).toEqual(false);
-  expect(state.selectedLayout).toHaveLength(2);
-
-  // temporary group exists
-  expect(state.group[temporaryGroupId]);
-
+    const splitedGroup = splitGroup(newGroup.layout);
+    expect(splitedGroup).toHaveLength(3);
+    expect(newGroup.layout.every(i => i.parent === undefined));
+  });
 });
 
-test.only('select single item and group', () => {
-  /**
-   *  |---|  |---|
-   *  | a |  | c |
-   *  |---|  |---|
-   *  |---|
-   *  | b |
-   *  |---|
-   */
-  const layout = [
-    { i: 'a', x: 10, y: 10, w: 10, h: 10 },
-    { i: 'b', x: 10, y: 25, w: 10, h: 10 },
-    { i: 'c', x: 25, y: 10, w: 10, h: 10 },
-  ];
-  const group = {
-    'a+b': {
-      id: 'a+b',
-      layout: [{ i: 'a'}, { i: 'b'}]
-    }
-  };
+describe('touchEvent', () => {
+  test('Selection', () => {
+    const selectfn = jest.fn();
+    const selectEndFn = jest.fn();
 
-  const fn = jest.fn();
-  const wrapper = mount(<Layout
-    layout={layout}
-    group={group}
-    width={1024}
-    grid={[10, 10]}
-    onLayoutSelect={fn}
-  >
-    {generateDOM(layout)}
-  </Layout>);
+    const wrapper = mount(<Selection
+      onSelect={selectfn}
+      onSelectEnd={selectEndFn}
+    >
+      <div id="handler" />
+    </Selection>);
 
-  expect(wrapper);
+    expect(wrapper).not.toBeNull();
+    const target = wrapper.find('#handler');
 
-  const eventTarget =  wrapper.find('.react-grid-layout-selection-wrapper > div').at(0);
-  selectRange(eventTarget, { x: 10, y: 10 }, { x: 300, y: 200 });
+    expect(wrapper).not.toBeNull();
+    expect(target).not.toBeNull();
 
-  const state = wrapper.state() as IGridLayoutState;
-  expect(state.selectedLayout).toHaveLength(3);
-  expect(((state.activeGroup) as Group).id).toEqual(temporaryGroupId);
-  expect(((state.focusItem) as LayoutItem).i).toEqual(temporaryGroupId);
+    target.simulate('touchStart', {
+      target: wrapper.find('div').at(0).instance(),
+      touches: [{ identifier: 0, clientX: 10, clientY: 10 }],
+      targetTouches: [{ identifier: 0, clientX: 10, clientY: 10 }],
+    });
 
-  expect(fn).toHaveBeenCalled();
+    expect((wrapper.state() as any).dragging).toEqual(true);
+    expect((wrapper.state() as any).start).toEqual({ x: 10, y: 10 });
 
-  const selectedLayout = fn.mock.calls[0][0];
-  expect(selectedLayout).toHaveLength(3);
-  const newGroup = groupLayout(selectedLayout, 'newGroup');
+    // mouseMove(100, 200);
 
-  expect(newGroup.layout).toHaveLength(3);
-  expect(newGroup.layout.every(i => i.parent === 'newGroup'));
+    // expect((wrapper.state() as any).dragging).toEqual(true);
+    // expect((wrapper.state() as any).end).toEqual({ x: 100, y: 200 });
+
+    // mouseUp(110, 210);
+
+    // expect((wrapper.state() as any).dragging).toEqual(false);
+    // expect((wrapper.state() as any).end).toBeNull();
+
+    // expect(selectfn.mock.calls.length).toEqual(1);
+    // expect(selectfn.mock.calls[0]).toEqual([ {"x": 10, "y": 10}, {"x": 100, "y": 200} ]);
+
+    // expect(selectEndFn.mock.calls.length).toEqual(1);
+    // expect(selectEndFn.mock.calls[0]).toEqual([ {"x": 10, "y": 10}, {"x": 110, "y": 210} ]);
+
+    wrapper.unmount();
+  });
 });

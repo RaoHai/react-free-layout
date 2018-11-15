@@ -51,9 +51,6 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     }
     const touchIdentifier = getTouchIdentifier(e as any);
     const position = getControlPosition(e as any, touchIdentifier, this);
-    if (!position) {
-      return;
-    }
     this.setState({
       dragging: true,
       touchIdentifier,
@@ -74,14 +71,7 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
 
     const touchIdentifier = getTouchIdentifier(e);
     const position = getControlPosition(e, touchIdentifier, this);
-
-    if (!position || !start) {
-      return;
-    }
-
-    if (position) {
-      this.props.onSelect(start, position);
-    }
+    this.props.onSelect(start, position);
 
     this.setState({
       touchIdentifier,
@@ -96,11 +86,7 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     }
 
     const position = getControlPosition(e, touchIdentifier, this);
-    if (position) {
-      this.props.onSelectEnd(start, position);
-    } else {
-      this.props.onSelectEnd(undefined, undefined);
-    }
+    this.props.onSelectEnd(start, position);
     this.setState({ dragging: false, start: null, end: null });
 
     this.removeEventListener('mousemove', this.moveSelection);
@@ -137,6 +123,7 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
       {this.drawingHandler()}
       {React.cloneElement(onlyChild, {
         onMouseDown: this.startSelection,
+        onTouchStart: this.startSelection,
       })}
     </div>
   }
