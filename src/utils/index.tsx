@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactChild } from 'react';
 import ReactDOM from 'react-dom';
 import { Layout, LayoutItem, Groups, temporaryGroupId, Group, IGridLayoutProps } from '../components/Layout';
 import Selection, { MousePosition } from '../components/Selection';
@@ -12,6 +12,9 @@ export interface Position {
 
 export function noop() { return; }
 export type OffsetParent = HTMLElement | (() => HTMLElement | null);
+export interface LevelMap {
+  [index: number]: ReactChild[];
+}
 
 export function synchronizeLayoutWithChildren(
   initialLayout: Layout,
@@ -20,14 +23,14 @@ export function synchronizeLayoutWithChildren(
   group: Groups,
   focusItem?: LayoutItem | null,
 ): {
-  layout: Layout;
   maxZ: number;
+  layout: Layout;
   bottom: number;
   group: Groups,
   focusItem?: LayoutItem | null,
+  children: JSX.Element[],
 } {
   let layout: Layout = initialLayout;
-  let maxZ = -Infinity;
 
   let focusItemVisited = false;
   const parentMap = {};
@@ -44,17 +47,17 @@ export function synchronizeLayoutWithChildren(
     }
   }
 
+  const levelMap: LevelMap = {
+    0: [],
+  };
+
   React.Children.forEach(children, (child: React.ReactChild, index) => {
-    if (!React.isValidElement(child)) {
-      return;
-    }
-    if (!child.key) {
+    if (!React.isValidElement(child) || !child.key) {
+      levelMap[0].push(child);
       return;
     }
     const definition = getLayoutItem(layout, String(child.key));
     if (definition) {
-      maxZ = Math.max(maxZ, definition.z || 0);
-
       if (definition.parent && !parentMap.hasOwnProperty(definition.parent)) {
         delete definition.parent;
       }
@@ -70,15 +73,30 @@ export function synchronizeLayoutWithChildren(
       const g = child.props["data-grid"];
       layout[index] = g ? g : { w: 1, h: 1, x: 0, y: bottom(layout), i: String(child.key) };
     }
-    if (focusItem && layout[index].i === focusItem.i) {
+    const item = layout[index];
+    const z = item.hasOwnProperty('z') && item.z && !isNaN(item.z) ? item.z : 0;
+    if (!levelMap[z]) {
+      levelMap[z] = [];
+    }
+
+    levelMap[z].push(child);
+
+    if (focusItem && item.i === focusItem.i) {
       focusItemVisited = true;
     }
   });
 
+  let sortedChildren: JSX.Element[] = [];
+  Object.keys(levelMap).sort().map(i => {
+    sortedChildren = sortedChildren.concat(levelMap[i])
+  });
+
+  console.log('>>> levelMap', levelMap, sortedChildren);
   return {
+    maxZ: Math.max(...Object.keys(levelMap).map(i => Number(i))),
+    children: sortedChildren,
     focusItem: focusItemVisited ? focusItem : null,
     layout,
-    maxZ,
     bottom: bottom(layout),
     group,
   }
@@ -310,8 +328,12 @@ export function hoistSelectionByParent(
   , []).concat(singleItems) : layout;
 }
 
-export function mergeLayout(layout: Layout, newLayout: Layout, extraValue?: (i: LayoutItem) => LayoutItem | {}) {
-
+export function updateLayout(
+  layout: Layout,
+  newLayout: Layout,
+  iterator: (...args: {}[]) => LayoutItem = (...args) => Object.assign({}, ...args),
+  extraValue?: (i: LayoutItem) => LayoutItem | {},
+) {
   if (!newLayout || !newLayout.length) {
     return layout;
   }
@@ -319,10 +341,27 @@ export function mergeLayout(layout: Layout, newLayout: Layout, extraValue?: (i: 
   return layout.map(item => {
     const found = newLayout.find(n => n.i === item.i);
     if (found) {
-      return Object.assign(item, found, typeof extraValue === 'function' ? extraValue(found) : extraValue);
+      return iterator(
+        item,
+        found,
+        extraValue && typeof extraValue === 'function' ? extraValue(found) : extraValue || {},
+      );
     }
     return item;
   });
+}
+
+export function mergeLayout(
+  layout: Layout,
+  newLayout: Layout,
+  extraValue?: (i: LayoutItem) => LayoutItem | {},
+) {
+  return updateLayout(
+    layout,
+    newLayout,
+    (...args: any[]) => Object.assign(args[0], ...args.slice(1)),
+    extraValue
+  );
 }
 
 export function getBoundingRectFromLayout(layout: Layout): GridRect {
@@ -453,4 +492,27 @@ export function layoutlize(layout: Layout, cols: number, unitHeight?: number) {
     w: Math.round(i.w * cols),
     h: Math.round(i.h * h),
   }));
+}
+
+export function changeItemLevel(item: LayoutItem, fn: (z: number) => number) {
+  return {
+    ...item,
+    z: fn(item.z || 1)
+  };
+}
+
+export function bringForward(item: LayoutItem) {
+  return changeItemLevel(item, z => z + 1);
+}
+
+export function bringBack(item: LayoutItem) {
+  return changeItemLevel(item, z => Math.max(z - 1, 1));
+}
+
+export function bringTop(item: LayoutItem, maxZ: number) {
+  return changeItemLevel(item, () => maxZ + 1);
+}
+
+export function bringBottom(item: LayoutItem) {
+  return changeItemLevel(item, () => 1);
 }

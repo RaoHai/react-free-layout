@@ -79,6 +79,8 @@ export interface IGridLayoutState {
   maxZ: number;
   bottom: number;
   colWidth: number;
+
+  children: ReactChild[];
 }
 
 const defaultProps = {
@@ -906,7 +908,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
   render() {
     const { extraRender, width, wrapperStyle = {}, style } = this.props;
-    const { bottom, mounted, colWidth } = this.state;
+    const { bottom, mounted, colWidth, children } = this.state;
 
     return <Selection
       onSelectStart={this.startSelection}
@@ -926,7 +928,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       >
         {mounted ? <>
           {this.group()}
-          {React.Children.map(this.props.children, this.processGridItem)}
+          {React.Children.map(children, this.processGridItem)}
           {this.placeholder()}
           {this.resizer()}
         </> : null}

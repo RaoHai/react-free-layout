@@ -46,6 +46,29 @@ describe('single layout', () => {
     expect(toJSON(wrapper));
   });
 
+  test('layout with sorter', () => {
+    const wrapper = mount(<Layout
+      layout={[
+        { i: 'a', x: 10, y: 10, w: 10, h: 10, z: 2 },
+        { i: 'b', x: 25, y: 10, w: 10, h: 10, z: 1 },
+        { i: 'c', x: 25, y: 10, w: 10, h: 10 },
+      ]}
+      width={1024}
+      grid={[8, 8]}
+    >
+      <div key="a">hello world</div>
+      <div key="b">hello world</div>
+      <div key="c">hello world</div>
+    </Layout>);
+
+    expect(wrapper);
+    expect((wrapper.state() as any).maxZ).toEqual(2);
+    const children = wrapper.find('GridItem');
+    expect(children).toHaveLength(3);
+    expect((children.at(0).instance().props as any).i).toEqual('c');
+    expect((children.at(1).instance().props as any).i).toEqual('b');
+    expect((children.at(2).instance().props as any).i).toEqual('a');
+  });
 
   test('controlled layout', () => {
     const fn = jest.fn();

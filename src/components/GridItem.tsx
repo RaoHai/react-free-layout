@@ -180,7 +180,7 @@ export default class GridItem extends Component<GridItemProps, {
   render() {
     const {
       margin, colWidth, containerPadding, rowHeight, isDraggable = true,
-      x, y, w, h, z,
+      x, y, w, h,
       children, className, style, active, selected, onContextMenu,
     } = this.props;
 
@@ -218,7 +218,7 @@ export default class GridItem extends Component<GridItemProps, {
       style: {
         ...style,
         ...child.props.style,
-        ...setTransform(out, z),
+        ...setTransform(out),
       },
       onContextMenu,
     });
