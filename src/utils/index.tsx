@@ -393,9 +393,6 @@ export function calcPosition(
   h: number,
   colWidth: number,
   containerPadding: [number, number],
-  state?: {
-    resizingPosition?: Position;
-  },
   suppliter = Math.round
 ) {
 
@@ -414,13 +411,6 @@ export function calcPosition(
         ? h
         : Math.round(colWidth * h)
   };
-
-  if (state && state.resizingPosition) {
-    out.width = Math.round(state.resizingPosition.width);
-    out.height = Math.round(state.resizingPosition.height);
-    out.top = suppliter(state.resizingPosition.top);
-    out.left = suppliter(state.resizingPosition.left);
-  }
 
   return out;
 }

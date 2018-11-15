@@ -2,7 +2,7 @@
 import React from 'react';
 import { mount } from 'enzyme';
 import Layout, { IGridLayoutState } from '../Layout';
-import { generateGroup, generateDOM, generateLayout, selectRange } from '../../../test/testUtils';
+import { generateGroup, generateDOM, generateLayout, selectRange, mouseMove, mouseUp } from '../../../test/testUtils';
 import { groupLayout } from '../../utils/index';
 const layout = generateLayout();
 
@@ -101,6 +101,7 @@ describe('Group', () => {
     wrapper.update();
 
     wrapper.find('#a').simulate('mousedown');
+    mouseUp(0, 0);
     expect((wrapper.state() as IGridLayoutState).focusItem).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10, parent: 'a+b' });
 
     wrapper.update();

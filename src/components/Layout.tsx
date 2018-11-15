@@ -204,7 +204,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     if (l.parent && (
       !stateActiveGroup                                                 // 1. 没有激活的容器时
       || stateActiveGroup.id !== l.parent                               // 2. 当前激活容器与当前节点的容器不一致时
-      || (stateFocusItem && stateFocusItem.i === l.i && stateActiveGroup.id === stateFocusItem.i)  // 3. 当前激活的容器与当前操作的节点是同一个时
+      || (stateFocusItem && stateActiveGroup.id === stateFocusItem.i)   // 3. 当前激活的容器与当前操作的节点是同一个时
     )) {
       const dragStart = this.onDragContainerStart(l.parent, ev);
       focusItem = dragStart.focusItem;
@@ -323,8 +323,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       Boolean(activeGroup && stateFocusItem && activeGroup.id == stateFocusItem.i),
       stateFocusItem,
     );
-    // const updated
-    // const focusItem
+
     if (oldDragItem) {
       persist(e);
       this.props.onDrag(layout, oldDragItem, l, placeholder, e, node);
@@ -353,9 +352,16 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       return;
     }
 
-    const { layout } = this.moveElement(stateLayout, i, { x, y, dx, dy }, true, stateFocusItem);
+    let layout = stateLayout;
+    if (dragging) {
+      const moved = this.moveElement(stateLayout, i, { x, y, dx, dy }, true, stateFocusItem);
+      layout = moved.layout;
+    }
 
-    if (!dragging && oldActiveGroup === activeGroup) {
+    if (!dragging && activeGroup && (
+      oldActiveGroup === activeGroup &&
+      activeGroup.id === l.parent
+    )) {
       this.selectItem(l);
     }
 
@@ -826,11 +832,10 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     return function calcWH(
       { x, y, height, width }: Pick<Position, 'width' | 'height'> & { x: number, y: number },
-      suppliter = Math.round
     ): { w: number; h: number } {
 
-      let w = suppliter(width / colWidth);
-      let h = suppliter(height / rowHeight);
+      let w = Math.round(width / colWidth);
+      let h = Math.round(height / rowHeight);
 
       // Capping
       w = Math.max(Math.min(w, cols - x), 0);
@@ -840,8 +845,8 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   getPositionCalculator = () => {
-    return (x: number, y: number, w: number, h: number, state: {}) => {
-      return calcPosition(x, y, w, h, this.state.colWidth, [0, 0], state);
+    return (x: number, y: number, w: number, h: number) => {
+      return calcPosition(x, y, w, h, this.state.colWidth, [0, 0]);
     }
   }
 

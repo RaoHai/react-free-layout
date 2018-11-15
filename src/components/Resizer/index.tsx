@@ -151,7 +151,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
           resizingX = Math.round(_x / this.props.colWidth);
           x = resizingX;
         } else {
-          width += direction[0] * deltaX;
+          width = width + direction[0] * deltaX;
         }
 
         if (direction[1] === -1) {
@@ -163,12 +163,17 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
           resizingY = Math.round(_y / this.props.rowHeight);
           y = resizingY;
         } else {
-          height += direction[1] * deltaY;
+          height = height + direction[1] * deltaY;
         }
 
         const { w: _w, h: _h } = calcWH({ width, height, x, y });
 
-        size = calcPosition(resizingX, resizingY, _w, _h, this.state);
+        size = {
+          width,
+          height,
+          left: Math.round(this.props.colWidth * x),
+          top: Math.round(this.props.rowHeight * y),
+        };
 
         w = _w;
         h = _h;
@@ -184,7 +189,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
 
       return this.props[handlerName](
         String(i),
-        { x, y, w, h },
+        layout,
         {
           e,
           node: data.node,
