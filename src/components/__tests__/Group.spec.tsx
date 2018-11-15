@@ -71,4 +71,40 @@ describe('Group', () => {
     const newState = newLayout.state() as IGridLayoutState;
     expect(newState.group).toEqual({ newGroup: group });
   });
+
+
+  test('select group', () => {
+    const group = {
+      'a+b': {
+        id: 'a+b',
+        layout: [{ i: 'a'}, { i: 'b'}]
+      },
+    };
+    const wrapper = mount(<Layout
+      layout={[
+        { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+        { i: 'b', x: 25, y: 10, w: 10, h: 10 },
+      ]}
+      group={group}
+      width={1024}
+      grid={[10, 10]}
+    >
+      <div key="a" id="a">hello world</div>
+      <div key="b" id="b">hello world</div>
+    </Layout>);
+
+    expect(wrapper);
+
+    wrapper.find('#a').simulate('mousedown');
+
+    expect((wrapper.state() as IGridLayoutState).focusItem).toEqual({ i: 'a+b', w: 25, x: 10, y: 10, h: 10,});
+    wrapper.update();
+
+    wrapper.find('#a').simulate('mousedown');
+    expect((wrapper.state() as IGridLayoutState).focusItem).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10, parent: 'a+b' });
+
+    wrapper.update();
+    wrapper.find('#b').simulate('mousedown');
+    expect((wrapper.state() as IGridLayoutState).focusItem).toEqual({ i: 'b', x: 25, y: 10, w: 10, h: 10, parent: 'a+b' });
+  });
 });

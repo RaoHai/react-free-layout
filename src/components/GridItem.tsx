@@ -120,10 +120,6 @@ export default class GridItem extends Component<GridItemProps, {
       switch (handlerName) {
         case 'onDragStart':
           const offsetParent = getOffsetParent(this.props.offsetParent);
-          if (!offsetParent) {
-            return;
-          }
-
           const parentRect = offsetParent.getBoundingClientRect();
           const clientRect = node.getBoundingClientRect();
           newPosition.left =

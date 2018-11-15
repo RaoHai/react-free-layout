@@ -201,11 +201,10 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     // 以下几种情况开启群组移动
     let focusItem: LayoutItem | null = l;
     let activeGroup: Group | null = null;
-
     if (l.parent && (
-      !stateActiveGroup                                      // 1. 没有激活的容器时
-      || stateActiveGroup.id !== l.parent                    // 2. 当前激活容器与当前节点的容器不一致时
-      || (stateFocusItem && stateActiveGroup.id === stateFocusItem.i)  // 3. 当前激活的容器与当前操作的节点是同一个时
+      !stateActiveGroup                                                 // 1. 没有激活的容器时
+      || stateActiveGroup.id !== l.parent                               // 2. 当前激活容器与当前节点的容器不一致时
+      || (stateFocusItem && stateFocusItem.i === l.i && stateActiveGroup.id === stateFocusItem.i)  // 3. 当前激活的容器与当前操作的节点是同一个时
     )) {
       const dragStart = this.onDragContainerStart(l.parent, ev);
       focusItem = dragStart.focusItem;

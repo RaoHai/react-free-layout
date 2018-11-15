@@ -85,6 +85,8 @@ describe('Selection', () => {
 
     eventTarget.simulate('mousedown', { clientX: 0, clientY: 0 });
     expect(state.group[temporaryGroupId]).toBeUndefined();
+
+    wrapper.unmount();
   });
 
   test('select single item and group', () => {
@@ -141,6 +143,8 @@ describe('Selection', () => {
     const splitedGroup = splitGroup(newGroup.layout);
     expect(splitedGroup).toHaveLength(3);
     expect(newGroup.layout.every(i => i.parent === undefined));
+
+    wrapper.unmount();
   });
 });
 

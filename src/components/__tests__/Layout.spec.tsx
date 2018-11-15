@@ -133,7 +133,6 @@ describe('Layout Exceptions', () => {
 
     setImmediate(() => {
       const updatedWrapper = wrapper.update();
-      const layout = updatedWrapper.find(Layout);
       const b = updatedWrapper.find('#b');
 
       b.simulate('mousedown');
@@ -168,7 +167,7 @@ describe('Events', () => {
   });
 
   test('click and select group', () => {
-    const group ={
+    const group = {
       'a+b': {
         id: 'a+b',
         layout: [{ i: 'a'}, { i: 'b'}]
@@ -285,12 +284,17 @@ describe('Events', () => {
   });
 
   it('delete selected item', () => {
+    const _layout = [
+      { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+      { i: 'b', x: 25, y: 10, w: 10, h: 10 }
+    ];
     class App extends React.Component {
       state = {
-        layout: [
-          { i: 'a', x: 10, y: 10, w: 10, h: 10 },
-          { i: 'b', x: 25, y: 10, w: 10, h: 10 }
-        ],
+        layout: _layout,
+      }
+
+      reset = () => {
+        this.setState({ layout: _layout });
       }
 
       delete = () => {
@@ -323,7 +327,14 @@ describe('Events', () => {
     expect(layout.state().focusItem).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10 });
 
     (wrapper.instance() as any).delete();
+    expect(layout.state().focusItem).toBeNull();
 
-    expect(layout.state().focusItem).toBeNull()
+    (wrapper.instance() as any).reset();
+
+    wrapper.find('#b').simulate('mousedown');
+    (wrapper.instance() as any).delete();
+
+    expect(layout.state().focusItem).toEqual({ i: 'b', x: 25, y: 10, w: 10, h: 10 })
+
   });
 });
