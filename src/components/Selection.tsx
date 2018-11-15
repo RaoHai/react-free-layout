@@ -60,7 +60,9 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     this.props.onSelectStart();
 
     this.addEventListener('mousemove', this.moveSelection);
+    this.addEventListener('touchmove', this.moveSelection);
     this.addEventListener('mouseup', this.moveSelectionStop)
+    this.addEventListener('touchend', this.moveSelectionStop);
   }
 
   moveSelection: EventListener = (e: any) => {
@@ -90,7 +92,9 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     this.setState({ dragging: false, start: null, end: null });
 
     this.removeEventListener('mousemove', this.moveSelection);
-    this.removeEventListener('mouseup', this.moveSelection);
+    this.removeEventListener('touchmove', this.moveSelection);
+    this.removeEventListener('mouseup', this.moveSelectionStop);
+    this.removeEventListener('touchend', this.moveSelectionStop);
   }
 
   drawingHandler() {

@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Layout, LayoutItem, Groups, temporaryGroupId, Group, IGridLayoutProps } from '../components/Layout';
 import Selection, { MousePosition } from '../components/Selection';
-import GridItem from '../components/GridItem';
 
 export interface Position {
   left: number,
@@ -76,7 +75,6 @@ export function synchronizeLayoutWithChildren(
     }
   });
 
-  layout = correctBounds(layout, { cols });
   return {
     focusItem: focusItemVisited ? focusItem : null,
     layout,
@@ -104,70 +102,6 @@ export function setTransform({ top, left, width, height }: Position, z: number =
     position: "absolute",
     zIndex: z,
   };
-}
-
-export function getStatics(layout: Layout): Layout {
-  return layout.filter(l => l.static);
-}
-
-export function collides(l1: LayoutItem, l2: LayoutItem): boolean {
-  if (l1.i === l2.i) {
-    return false; // same element
-  }
-  if (l1.x + l1.w <= l2.x) {
-    return false; // l1 is left of l2
-  }
-  if (l1.x >= l2.x + l2.w) {
-    return false; // l1 is right of l2
-  }
-  if (l1.y + l1.h <= l2.y) {
-    return false; // l1 is above l2
-  }
-  if (l1.y >= l2.y + l2.h) {
-    return false; // l1 is below l2
-  }
-  return true; // boxes overlap
-}
-
-export function getFirstCollision(
-  layout: Layout,
-  layoutItem: LayoutItem
-): LayoutItem | undefined {
-  for (let i = 0, len = layout.length; i < len; i++) {
-    if (collides(layout[i], layoutItem)) {
-      return layout[i];
-    }
-  }
-  return;
-}
-
-export function correctBounds(
-  layout: Layout,
-  bounds: { cols: number }
-): Layout {
-  const collidesWith = getStatics(layout);
-  for (let i = 0, len = layout.length; i < len; i++) {
-    const l = layout[i];
-    // Overflows right
-    if (l.x + l.w > bounds.cols) {
-      l.x = bounds.cols - l.w;
-    }
-    // Overflows left
-    if (l.x < 0) {
-      l.x = 0;
-      l.w = bounds.cols;
-    }
-    if (!l.static) {
-      collidesWith.push(l);
-    } else {
-      // If this is static and collides with other statics, we must move it down.
-      // We have to do something nicer than just letting them overlap.
-      while (getFirstCollision(collidesWith, l)) {
-        l.y++;
-      }
-    }
-  }
-  return layout;
 }
 
 export function bottom(layout: Layout): number {
@@ -459,7 +393,9 @@ export function calcPosition(
   h: number,
   colWidth: number,
   containerPadding: [number, number],
-  state?: GridItem['state'],
+  state?: {
+    resizingPosition?: Position;
+  },
   suppliter = Math.round
 ) {
 
@@ -486,11 +422,6 @@ export function calcPosition(
     out.left = suppliter(state.resizingPosition.left);
   }
 
-  if (state && state.dragging) {
-    out.top = suppliter(state.dragging.top);
-    out.left = suppliter(state.dragging.left);
-  }
-
   return out;
 }
 
@@ -508,10 +439,8 @@ export function calcColWidth(
   grid: IGridLayoutProps['grid'],
   containerPadding: IGridLayoutProps['containerPadding'],
 ) {
-  // const { containerPadding, grid, width } = this.props;
   const cols = getCols({ width, grid });
-  const calcColWidth = (width - containerPadding[0] * 2) / cols;
-  return calcColWidth;
+  return (width - containerPadding[0] * 2) / cols;
 }
 
 export function percentile(layout: Layout, cols: number, height?: number) {

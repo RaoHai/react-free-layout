@@ -31,8 +31,8 @@ export interface ResizeCallbacks<T> {
 
 export const handles: AxisOpt[] = [
   { key: 'tl', direction: [ -1, -1] },
-  { key: 'tr', direction: [ -1, 1 ] },
-  { key: 'bl', direction: [ 1, -1 ] },
+  { key: 'tr', direction: [ 1, -1 ] },
+  { key: 'bl', direction: [ -1, 1 ] },
   { key: 'br', direction: [ 1, 1  ] },
   { key: 't', direction: [ 0, -1 ] },
   { key: 'l', direction: [ -1, 0 ] },
@@ -168,7 +168,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
 
         const { w: _w, h: _h } = calcWH({ width, height, x, y });
 
-        size = calcPosition(resizingX, resizingY, _w, _h);
+        size = calcPosition(resizingX, resizingY, _w, _h, this.state);
 
         w = _w;
         h = _h;

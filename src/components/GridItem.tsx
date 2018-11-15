@@ -73,7 +73,6 @@ export default class GridItem extends Component<GridItemProps, {
   dragging: Pick<Position, 'left' | 'top'> | null;
   originPosition: Position | null;
   originLayout: Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'> | null;
-  resizingPosition: Position | null;
   resizingLayout: Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'> | null;
 }> {
 
@@ -91,7 +90,6 @@ export default class GridItem extends Component<GridItemProps, {
       dragging: null,
       originPosition: null,
       originLayout: null,
-      resizingPosition: null,
       resizingLayout: null,
     };
   }
@@ -214,7 +212,6 @@ export default class GridItem extends Component<GridItemProps, {
         className,
         {
           static: this.props.static,
-          resizing: Boolean(this.state.resizingPosition),
           "react-draggable": isDraggable,
           "react-draggable-dragging": Boolean(this.state.dragging),
           active: Boolean(active),

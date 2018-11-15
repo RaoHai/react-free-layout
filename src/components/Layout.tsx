@@ -78,6 +78,7 @@ export interface IGridLayoutState {
   oldActiveGroup?: Group | null;
   maxZ: number;
   bottom: number;
+  colWidth: number;
 }
 
 const defaultProps = {
@@ -151,7 +152,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
   constructor(props: IGridLayoutProps) {
     super(props);
-    const { layout, children, grid, width, group } = props;
+    const { layout, children, grid, width, group, containerPadding } = props;
     const cols = getCols({ width, grid });
     this.state = {
       ...(synchronizeLayoutWithChildren(
@@ -161,6 +162,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         group,
       )),
       mounted: false,
+      colWidth: calcColWidth(width, grid, containerPadding),
     }
   }
 
@@ -174,7 +176,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       !isEqual(nextProps.activeDrag, this.props.activeDrag) ||
       !isEqual(nextProps.group, this.props.group)
     ) {
-      const { layout, children, group } = nextProps;
+      const { layout, children, group, width, grid, containerPadding } = nextProps;
       this.setState({
         ...synchronizeLayoutWithChildren(
           layout,
@@ -183,6 +185,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
           mergeTemporaryGroup(group, this.state.group),
           this.state.focusItem,
         ),
+        colWidth: calcColWidth(width, grid, containerPadding),
       });
     }
   }
@@ -525,15 +528,14 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   selectLayoutItemByRect = (start?: MousePosition, end?: MousePosition) => {
-    const { selecting, layout } = this.state;
+    const { selecting, layout, colWidth } = this.state;
     if (!selecting || !start || !end) {
       return this.setState({ selectedLayout: [] });
     }
 
-    const { width, grid, containerPadding } = this.props;
     const selectedLayout = pickByRect(
       layout,
-      getRectFromPoints(start, end, calcColWidth(width, grid, containerPadding)),
+      getRectFromPoints(start, end, colWidth),
     );
 
     this.setState({ selectedLayout });
@@ -671,9 +673,9 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     children: ReactChild,
     extProps?: Partial<GridItem['props']>,
   ) => {
-    const { width, containerPadding, maxRows, grid } = this.props;
+    const { width, containerPadding, maxRows } = this.props;
     const cols = getCols(this.props);
-    const colWidth = calcColWidth(width, grid, containerPadding);
+    const { colWidth } = this.state;
 
     return <GridItem
       {...extProps}
@@ -818,8 +820,8 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   getWHCalculator = () => {
-    const { maxRows, width, grid, containerPadding } = this.props;
-    const colWidth = calcColWidth(width, grid, containerPadding);
+    const { maxRows } = this.props;
+    const colWidth = this.state.colWidth;
     const cols = getCols(this.props);
     const rowHeight = colWidth;
 
@@ -839,15 +841,13 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   getPositionCalculator = () => {
-    return (x: number, y: number, w: number, h: number) => {
-      const { width, grid, containerPadding } = this.props;
-      return calcPosition(x, y, w, h, calcColWidth(width,  grid, containerPadding), [0, 0]);
+    return (x: number, y: number, w: number, h: number, state: {}) => {
+      return calcPosition(x, y, w, h, this.state.colWidth, [0, 0], state);
     }
-
   }
 
   resizer = () => {
-    const { focusItem, activeGroup } = this.state;
+    const { focusItem, activeGroup, colWidth } = this.state;
     if (!focusItem) {
       return null;
     }
@@ -865,8 +865,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onResizeStop: this.onResizeStop,
     };
 
-    const { width, grid, containerPadding } = this.props;
-    const colWidth = calcColWidth(width, grid, containerPadding);
     return <Resizer
       i={i}
       x={x}
@@ -885,9 +883,8 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
 
   render() {
-    const { extraRender, width, wrapperStyle = {}, style, grid, containerPadding } = this.props;
-    const { bottom, mounted } = this.state;
-    const colWith = calcColWidth(width, grid, containerPadding);
+    const { extraRender, width, wrapperStyle = {}, style } = this.props;
+    const { bottom, mounted, colWidth } = this.state;
 
     return <Selection
       onSelectStart={this.startSelection}
@@ -900,7 +897,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         style={{
           ...style,
           width,
-          height: (bottom + 10) * colWith,
+          height: (bottom + 10) * colWidth,
           position: 'relative'
         }}
         ref={this.offsetParent}

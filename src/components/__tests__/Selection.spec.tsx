@@ -1,6 +1,6 @@
 import React from 'react';
 import { mount } from 'enzyme';
-import { mouseDown, mouseMove, mouseUp, generateDOM, selectRange } from '../../../test/testUtils';
+import { mouseMove, mouseUp, generateDOM, selectRange, touchMove, touchEnd } from '../../../test/testUtils';
 import Selection from '../Selection';
 import Layout, { temporaryGroupId, IGridLayoutState, Group, LayoutItem } from '../Layout';
 import { groupLayout, splitGroup } from '../../utils/index';
@@ -171,22 +171,16 @@ describe('touchEvent', () => {
     expect((wrapper.state() as any).dragging).toEqual(true);
     expect((wrapper.state() as any).start).toEqual({ x: 10, y: 10 });
 
-    // mouseMove(100, 200);
 
-    // expect((wrapper.state() as any).dragging).toEqual(true);
-    // expect((wrapper.state() as any).end).toEqual({ x: 100, y: 200 });
+    touchMove(100, 200);
 
-    // mouseUp(110, 210);
+    expect((wrapper.state() as any).dragging).toEqual(true);
+    expect((wrapper.state() as any).end).toEqual({ x: 100, y: 200 });
 
-    // expect((wrapper.state() as any).dragging).toEqual(false);
-    // expect((wrapper.state() as any).end).toBeNull();
+    touchEnd(110, 210);
 
-    // expect(selectfn.mock.calls.length).toEqual(1);
-    // expect(selectfn.mock.calls[0]).toEqual([ {"x": 10, "y": 10}, {"x": 100, "y": 200} ]);
-
-    // expect(selectEndFn.mock.calls.length).toEqual(1);
-    // expect(selectEndFn.mock.calls[0]).toEqual([ {"x": 10, "y": 10}, {"x": 110, "y": 210} ]);
-
+    expect((wrapper.state() as any).dragging).toEqual(false);
+    expect((wrapper.state() as any).end).toBeNull();
     wrapper.unmount();
   });
 });

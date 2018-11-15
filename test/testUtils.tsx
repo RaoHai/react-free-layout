@@ -62,8 +62,29 @@ export function generateGroup(layouts: any[]) {
   return groups;
 }
 
-export function mouseDown(node: ReactWrapper, clientX: number, clientY: number) {
-  node.simulate('mousedown', { clientX, clientY });
+
+function createTouchEvent(x: number, y: number, element: Element | Document, eventType: string) {
+  const touchObj = {
+    identifier: Date.now(),
+    target: element,
+    clientX: x,
+    clientY: y,
+    radiusX: 2.5,
+    radiusY: 2.5,
+    rotationAngle: 10,
+    force: 0.5,
+  } as any;
+
+  const touchEvent = new TouchEvent(eventType, {
+    cancelable: true,
+    bubbles: true,
+    touches: [touchObj],
+    targetTouches: [],
+    changedTouches: [touchObj],
+    shiftKey: true,
+  });
+
+  element.dispatchEvent(touchEvent);
 }
 
 export function mouseMove(x: number, y: number, node?: Element | ReactWrapper) {
@@ -73,6 +94,16 @@ export function mouseMove(x: number, y: number, node?: Element | ReactWrapper) {
       0, 0, 0, x, y, false, false, false, false, 0, null);
   doc.dispatchEvent(evt);
   return evt;
+}
+
+export function touchMove(x: number, y: number, node?: Element | ReactWrapper) {
+  const doc = node && (node as Element).ownerDocument || document;
+  createTouchEvent(x, y, doc, 'touchmove');
+}
+
+export function touchEnd(x: number, y: number, node?: Element | ReactWrapper) {
+  const doc = node && (node as Element).ownerDocument || document;
+  createTouchEvent(x, y, doc, 'touchend');
 }
 
 export function mouseUp(x: number, y: number, node?: Element | ReactWrapper) {
