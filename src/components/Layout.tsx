@@ -1,4 +1,4 @@
-import React, { ReactChild, MouseEventHandler } from 'react';
+import React, { ReactChild, MouseEvent as ReactMouseEvent } from 'react';
 import isEqual from 'lodash.isequal';
 import classnames from 'classnames';
 import {
@@ -141,7 +141,7 @@ export type IGridLayoutProps = {
   isResizable?: boolean;
   extraRender?: () => JSX.Element;
   onLayoutChange: (layout: Layout) => void;
-  onContextMenu?: (i: symbol | string, config: LayoutItem, ev: React.MouseEvent) => void;
+  onContextMenu?: (currentItem: LayoutItem, focusItem: LayoutItem | null | undefined, ev: ReactMouseEvent) => void;
 } & GridDragCallbacks<GridDragEventCallback>
 & ResizeCallbacks<GridResizeEventCallback>
 & SelectCallbacks<SelectEventCallback>
@@ -472,15 +472,15 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     this.onLayoutMaybeChanged(layout, oldLayout);
   }
 
-  onContextMenu: MouseEventHandler = e => {
+  onContextMenu = (currentItem: LayoutItem, e: ReactMouseEvent) => {
     const { focusItem } = this.state;
-    if (!this.props.onContextMenu || !focusItem) {
+    if (!this.props.onContextMenu) {
       return;
     }
 
     persist(e);
     return this.props.onContextMenu(
-      focusItem.i,
+      currentItem,
       focusItem,
       e,
     )
@@ -573,6 +573,24 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     this.setState({ layout: removedLayout });
     this.props.onLayoutChange(removedLayout);
+  }
+
+  selectGroup = (group: Group, groupRect: GridRect) => {
+    if (!group) {
+      return;
+    }
+
+    const rect = groupRect || group.rect || getBoundingRectFromLayout(group.layout);
+    this.setState({
+      activeGroup: group,
+      focusItem: {
+        x: rect.x,
+        y: rect.y,
+        w: rect.right - rect.x,
+        h: rect.bottom - rect.y,
+        i: group.id,
+      },
+    });
   }
 
   addTemporaryGroup = (selectedLayout: Layout) => {
@@ -699,7 +717,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       colWidth={colWidth}
       rowHeight={colWidth}
       offsetParent={this.getOffsetParent}
-      onContextMenu={this.onContextMenu}
+      onContextMenu={(e: React.MouseEvent) => this.onContextMenu(activeDrag, e)}
       {...events}
     >
       {children}
@@ -763,18 +781,18 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     };
   }
 
-  renderGroupItem = (key: string | symbol, rect: GridRect) => {
+  renderGroupItem = (group: Group, rect: GridRect) => {
     const { activeGroup, focusItem } = this.state;
 
-    const selected = Boolean(activeGroup && activeGroup.id === key); // 是否激活
-    const active = Boolean(focusItem && selected && focusItem.i === key);
-
+    const selected = Boolean(activeGroup && activeGroup.id === group.id); // 是否激活
+    const active = Boolean(focusItem && selected && focusItem.i === group.id);
     const className = classnames('react-grid-layout-group react-selection-placeholder', {
-      'temporary-group': key === temporaryGroupId,
+      'temporary-group': group.id === temporaryGroupId,
     });
+
     return this.createGridItem(
       {
-        i: key,
+        i: group.id,
         x: rect.x,
         y: rect.y,
         w: rect.right - rect.x,
@@ -782,7 +800,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       },
       {
         onDrag: noop,
-        onDragStart: noop,
+        onDragStart: () => this.selectGroup(group, rect),
         onDragStop: noop,
       },
       <div />,
@@ -800,7 +818,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     if (!selecting && group[temporaryGroupId] && group[temporaryGroupId].layout.length) {
       groups.push(
         this.renderGroupItem(
-          temporaryGroupId,
+          group[temporaryGroupId],
           getBoundingRectFromLayout(group[temporaryGroupId].layout)
         )
       );
@@ -808,12 +826,12 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     for (const key in group) {
       if (group.hasOwnProperty(key)) {
-        const currLayout: Group = group[key];
-        if (!currLayout || !currLayout.layout.length) {
+        const currentGroup: Group = group[key];
+        if (!currentGroup || !currentGroup.layout.length) {
           continue;
         }
-        const rect = getBoundingRectFromLayout(currLayout.layout);
-        groups.push(this.renderGroupItem(key, rect))
+        const rect = getBoundingRectFromLayout(currentGroup.layout);
+        groups.push(this.renderGroupItem(currentGroup, rect))
       }
     }
 

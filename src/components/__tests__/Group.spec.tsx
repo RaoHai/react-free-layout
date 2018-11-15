@@ -107,5 +107,13 @@ describe('Group', () => {
     wrapper.update();
     wrapper.find('#b').simulate('mousedown');
     expect((wrapper.state() as IGridLayoutState).focusItem).toEqual({ i: 'b', x: 25, y: 10, w: 10, h: 10, parent: 'a+b' });
+
+    const groupEle = wrapper.findWhere(i => {
+      return i && i.instance() && i.instance().props && (i.instance().props as any).i === 'a+b';
+    });
+    expect(groupEle);
+
+    groupEle.simulate('mousedown');
+    expect((wrapper.state() as IGridLayoutState).focusItem).toEqual({ i: 'a+b', w: 25, x: 10, y: 10, h: 10,});
   });
 });

@@ -279,7 +279,7 @@ describe('Events', () => {
     handler.simulate('contextmenu');
 
     expect(fn).toBeCalled();
-    expect(fn.mock.calls[0][0]).toEqual('a');
+    expect(fn.mock.calls[0][0]).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10});
     expect(fn.mock.calls[0][1]).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10});
   });
 
