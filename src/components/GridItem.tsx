@@ -1,8 +1,14 @@
 import React, { Component, MouseEventHandler } from 'react';
 import { DraggableCore, DraggableData } from 'react-draggable';
 import classNames from 'classnames';
-import { LayoutItem } from './Layout';
 import { setTransform, getOffsetParent, OffsetParent } from '../utils';
+import { LayoutItem } from '../model/LayoutState';
+
+const canUseDOM = !!(
+  typeof window !== 'undefined' &&
+  window.document &&
+  window.document.createElement
+);
 
 export interface GridDragEvent {
   e: MouseEvent | React.SyntheticEvent<MouseEvent>;
@@ -68,6 +74,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
   };
 
 export default class GridItem extends Component<GridItemProps, {
+  mounted: boolean;
   lastX: number;
   lastY: number;
   dragging: Pick<Position, 'left' | 'top'> | null;
@@ -91,9 +98,15 @@ export default class GridItem extends Component<GridItemProps, {
       originPosition: null,
       originLayout: null,
       resizingLayout: null,
+      mounted: !Boolean(canUseDOM),
     };
   }
 
+  componentDidMount() {
+    if (!this.state.mounted) {
+      this.setState({ mounted: true });
+    }
+  }
   calcXY(top: number, left: number, suppliter = Math.round): { x: number, y: number } {
     const { margin, cols, colWidth, rowHeight, w, h, maxRows } = this.props;
 
@@ -223,7 +236,7 @@ export default class GridItem extends Component<GridItemProps, {
       onContextMenu,
     });
 
-    newChild = this.mixinDraggable(newChild, isDraggable);
+    newChild = this.state.mounted ? this.mixinDraggable(newChild, isDraggable) : newChild;
     return newChild;
   }
 }

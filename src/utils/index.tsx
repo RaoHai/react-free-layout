@@ -1,7 +1,7 @@
-import React, { ReactChild } from 'react';
 import ReactDOM from 'react-dom';
-import { Layout, LayoutItem, Groups, temporaryGroupId, Group, IGridLayoutProps } from '../components/Layout';
+import { Layout, temporaryGroupId, IGridLayoutProps } from '../components/Layout';
 import Selection, { MousePosition } from '../components/Selection';
+import { Groups, Group, LayoutItem, GridRect, defaultLevel } from '../model/LayoutState';
 
 export interface Position {
   left: number,
@@ -12,95 +12,6 @@ export interface Position {
 
 export function noop() { return; }
 export type OffsetParent = HTMLElement | (() => HTMLElement | null);
-export interface LevelMap {
-  [index: number]: ReactChild[];
-}
-
-export function synchronizeLayoutWithChildren(
-  initialLayout: Layout,
-  children: JSX.Element[] | JSX.Element,
-  cols: number,
-  group: Groups,
-  focusItem?: LayoutItem | null,
-): {
-  // maxZ: number;
-  layout: Layout;
-  bottom: number;
-  group: Groups,
-  focusItem?: LayoutItem | null,
-  // children: JSX.Element[],
-} {
-  let layout: Layout = initialLayout;
-
-  let focusItemVisited = false;
-  const parentMap = {};
-
-  for (const key in group) {
-    if (group.hasOwnProperty(key)) {
-      const g: Group = group[key];
-      g.id = g.id || key;
-      g.layout.forEach(i => parentMap[i.i] = key);
-      g.layout = [];
-      if (focusItem && focusItem.i === key) {
-        focusItemVisited = true;
-      }
-    }
-  }
-
-  // const levelMap: LevelMap = {
-  //   0: [],
-  // };
-
-  React.Children.forEach(children, (child: React.ReactChild, index) => {
-    if (!React.isValidElement(child) || !child.key) {
-      // levelMap[0].push(child);
-      return;
-    }
-    const definition = getLayoutItem(layout, String(child.key));
-    if (definition) {
-      if (definition.parent && !parentMap.hasOwnProperty(definition.parent)) {
-        delete definition.parent;
-      }
-
-      if (parentMap.hasOwnProperty(definition.i)) {
-        const parentId = parentMap[definition.i];
-        definition.parent = parentId
-        group[parentId].layout.push(definition);
-      }
-
-      layout[index] = definition;
-    } else {
-      const g = child.props["data-grid"];
-      layout[index] = g ? g : { w: 1, h: 1, x: 0, y: bottom(layout), i: String(child.key) };
-    }
-    const item = layout[index];
-    // const z = item.hasOwnProperty('z') && item.z && !isNaN(item.z) ? item.z : 0;
-    // if (!levelMap[z]) {
-    //   levelMap[z] = [];
-    // }
-
-    // levelMap[z].push(child);
-
-    if (focusItem && item.i === focusItem.i) {
-      focusItemVisited = true;
-    }
-  });
-
-  // let sortedChildren: JSX.Element[] = [];
-  // Object.keys(levelMap).sort().map(i => {
-  //   sortedChildren = sortedChildren.concat(levelMap[i])
-  // });
-
-  // console.log('>>> levelMap', levelMap, sortedChildren);
-  return {
-    // maxZ: Math.max(...Object.keys(levelMap).map(i => Number(i))),
-    // children: sortedChildren,
-    focusItem: focusItemVisited ? focusItem : null,
-    layout,
-    bottom: bottom(layout),
-    group,
-  }
-}
 
 export function getLayoutItem(layout: Layout, key: string | symbol): LayoutItem | undefined {
   return layout.find(({ i }) => i === key);
@@ -255,13 +166,6 @@ export function offsetXYFromParent(evt: { clientX: number, clientY: number }, _o
   return { x, y };
 }
 
-export interface GridRect {
-  x: number;
-  y: number;
-  right: number;
-  bottom: number;
-}
-
 export function getRectFromPoints(start: MousePosition, end: MousePosition, colWidth: number): GridRect {
   const x = Math.min(start.x, end.x);
   const y = Math.min(start.y, end.y);
@@ -276,10 +180,22 @@ export function getRectFromPoints(start: MousePosition, end: MousePosition, colW
   };
 }
 
-export function groupLayout(layout: Layout, id: string): Group {
+export function groupLayout(_layout: Layout, id: string): Group {
+  const level: number[] = [];
+  const layout = _layout.map(i => {
+    if (i.z && !isNaN(i.z) && i.z !== defaultLevel) {
+      level.push(i.z);
+    }
+    return {
+      ...i,
+      parent: id,
+      _parent: id,
+    };
+  });
   return {
     id,
-    layout: layout.map(i => ({ ...i, parent: id, _parent: id })),
+    level,
+    layout,
     rect: getBoundingRectFromLayout(layout),
   };
 }
@@ -328,8 +244,12 @@ export function hoistSelectionByParent(
   , []).concat(singleItems) : layout;
 }
 
-export function mergeLayout(layout: Layout, newLayout: Layout, extraValue?: (i: LayoutItem) => LayoutItem | {}) {
-
+export function updateLayout(
+  layout: Layout,
+  newLayout: Layout,
+  extraValue?: (i: LayoutItem) => LayoutItem | {},
+  iter: (...args: any[]) => LayoutItem = (...args: any[]) => Object.assign({}, ...args),
+) {
   if (!newLayout || !newLayout.length) {
     return layout;
   }
@@ -337,10 +257,18 @@ export function mergeLayout(layout: Layout, newLayout: Layout, extraValue?: (i: 
   return layout.map(item => {
     const found = newLayout.find(n => n.i === item.i);
     if (found) {
-      return Object.assign(item, found, typeof extraValue === 'function' ? extraValue(found) : extraValue);
+      return iter(item, found, typeof extraValue === 'function' ? extraValue(found) : extraValue);
     }
     return item;
   });
+}
+
+export function mergeLayout(
+  layout: Layout,
+  newLayout: Layout,
+  extraValue?: (i: LayoutItem) => LayoutItem | {},
+) {
+  return updateLayout(layout, newLayout, extraValue, (...args: any[]) => Object.assign(args[0], ...args.slice(1)));
 }
 
 export function getBoundingRectFromLayout(layout: Layout): GridRect {
@@ -354,7 +282,6 @@ export function getBoundingRectFromLayout(layout: Layout): GridRect {
 
   return { x, y, right, bottom }
 }
-
 
 export function mergeTemporaryGroup(
   newGroup: Groups,

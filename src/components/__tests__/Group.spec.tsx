@@ -20,8 +20,8 @@ describe('Group', () => {
 
     expect(wrapper);
     const state = wrapper.state() as IGridLayoutState;
-    expect(state.group).toEqual(group);
-    expect(state.layout.every(i => !!i.parent));
+    expect(state.layoutState.groups).toEqual(group);
+    expect(state.layoutState.layout.every(i => !!i.parent));
   });
 
   test('GroupAction: create group', () => {
@@ -69,7 +69,7 @@ describe('Group', () => {
 
     expect(newLayout);
     const newState = newLayout.state() as IGridLayoutState;
-    expect(newState.group).toEqual({ newGroup: group });
+    expect(newState.layoutState.groups).toEqual({ newGroup: group });
   });
 
 
@@ -97,16 +97,16 @@ describe('Group', () => {
 
     wrapper.find('#a').simulate('mousedown');
 
-    expect((wrapper.state() as IGridLayoutState).focusItem).toEqual({ i: 'a+b', w: 25, x: 10, y: 10, h: 10,});
+    expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toEqual({ i: 'a+b', w: 25, x: 10, y: 10, h: 10,});
     wrapper.update();
 
     wrapper.find('#a').simulate('mousedown');
     mouseUp(0, 0);
-    expect((wrapper.state() as IGridLayoutState).focusItem).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10, parent: 'a+b' });
+    expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10, parent: 'a+b' });
 
     wrapper.update();
     wrapper.find('#b').simulate('mousedown');
-    expect((wrapper.state() as IGridLayoutState).focusItem).toEqual({ i: 'b', x: 25, y: 10, w: 10, h: 10, parent: 'a+b' });
+    expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toEqual({ i: 'b', x: 25, y: 10, w: 10, h: 10, parent: 'a+b' });
 
     const groupEle = wrapper.findWhere(i => {
       return i && i.instance() && i.instance().props && (i.instance().props as any).i === 'a+b';
@@ -114,6 +114,6 @@ describe('Group', () => {
     expect(groupEle);
 
     groupEle.simulate('mousedown');
-    expect((wrapper.state() as IGridLayoutState).focusItem).toEqual({ i: 'a+b', w: 25, x: 10, y: 10, h: 10,});
+    expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toEqual({ i: 'a+b', w: 25, x: 10, y: 10, h: 10,});
   });
 });

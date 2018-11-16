@@ -2,9 +2,9 @@ import React from 'react';
 import { mount } from 'enzyme';
 import { mouseMove, mouseUp, generateDOM, selectRange, touchMove, touchEnd } from '../../../test/testUtils';
 import Selection from '../Selection';
-import Layout, { temporaryGroupId, IGridLayoutState, Group, LayoutItem } from '../Layout';
+import Layout, { temporaryGroupId, IGridLayoutState, Group } from '../Layout';
 import { groupLayout, splitGroup } from '../../utils/index';
-
+import { LayoutItem } from '../../model/LayoutState';
 
 describe('Selection', () => {
   test('Selection', () => {
@@ -76,15 +76,16 @@ describe('Selection', () => {
 
     mouseUp(350, 210);
 
-    const state = wrapper.state() as any;
+    const state = (wrapper.state() as any) as IGridLayoutState;
     expect(state.selecting).toEqual(false);
     expect(state.selectedLayout).toHaveLength(2);
 
     // temporary group exists
-    expect(state.group[temporaryGroupId]).not.toBeUndefined();
+    expect(state.layoutState.getGroup(temporaryGroupId)).not.toBeUndefined();
 
     eventTarget.simulate('mousedown', { clientX: 0, clientY: 0 });
-    expect(state.group[temporaryGroupId]).toBeUndefined();
+
+    expect((wrapper.state() as any).layoutState.getGroup(temporaryGroupId)).toBeUndefined();
 
     wrapper.unmount();
   });
@@ -124,12 +125,12 @@ describe('Selection', () => {
     expect(wrapper);
 
     const eventTarget =  wrapper.find('.react-grid-layout-selection-wrapper > div').at(0);
-    selectRange(eventTarget, { x: 10, y: 10 }, { x: 300, y: 200 });
+    selectRange(eventTarget, { x: 10, y: 10 }, { x: 300, y: 300 });
 
     const state = wrapper.state() as IGridLayoutState;
     expect(state.selectedLayout).toHaveLength(3);
-    expect(((state.activeGroup) as Group).id).toEqual(temporaryGroupId);
-    expect(((state.focusItem) as LayoutItem).i).toEqual(temporaryGroupId);
+    expect(((state.layoutState.activeGroup) as Group).id).toEqual(temporaryGroupId);
+    expect(((state.layoutState.focusItem) as LayoutItem).i).toEqual(temporaryGroupId);
 
     expect(fn).toHaveBeenCalled();
 

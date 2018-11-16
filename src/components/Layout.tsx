@@ -1,19 +1,15 @@
-import React, { ReactChild, MouseEvent as ReactMouseEvent } from 'react';
+import React, { ReactChild, MouseEvent as ReactMouseEvent, isValidElement } from 'react';
 import isEqual from 'lodash.isequal';
 import classnames from 'classnames';
+import LayoutState, { Groups, Group, LayoutItem, GridRect, defaultLevel } from '../model/LayoutState';
+
 import {
-  synchronizeLayoutWithChildren,
-  getLayoutItem,
   cloneLayoutItem,
-  moveElement,
-  bottom,
   pickByRect,
   getRectFromPoints,
   getBoundingRectFromLayout,
   noop,
-  GridRect,
   stretchLayout,
-  mergeTemporaryGroup,
   hoistSelectionByParent,
   calcPosition,
   Position,
@@ -29,24 +25,6 @@ import Resizer, { ResizeCallbacks, ResizeProps, SelectCallbacks, GridResizeCallb
 import { persist } from '../utils/events';
 
 export const temporaryGroupId = Symbol('template');
-export interface LayoutItem {
-  w: number;
-  h: number;
-  x: number;
-  y: number;
-  i: string | symbol;
-  z?: number;
-  minW?: number;
-  minH?: number;
-  maxW?: number;
-  maxH?: number;
-  moved?: boolean;
-  static?: boolean;
-  isDraggable?: boolean;
-  isResizable?: boolean;
-  parent?: string | symbol;
-  _parent?: string | symbol;
-}
 
 const TOP = 999;
 export type Layout = LayoutItem[];
@@ -56,31 +34,15 @@ export interface Group {
   layout: Layout;
 }
 
-export type Groups = {
-  [key in symbol]: Group;
-};
 export interface IGridLayoutState {
-  layout: Layout;
-  group: Groups;
-  mounted: boolean;
-  focusItem?: LayoutItem | null;
-  oldDragItem?: LayoutItem | null;
-  oldLayout?: Layout | null;
-  oldResizeItem?: LayoutItem | null;
-  activeDrag?: LayoutItem | null;
+  layoutState: LayoutState;
 
+  mounted: boolean;
+
+  oldResizeItem?: LayoutItem | null;
   selecting?: boolean;
   selectedLayout?: Layout;
-
-  dragging?: boolean;
-
-  activeGroup?: Group | null;
-  oldActiveGroup?: Group | null;
-  // maxZ: number;
-  bottom: number;
   colWidth: number;
-
-  // children: ReactChild[];
 }
 
 const defaultProps = {
@@ -155,17 +117,12 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   constructor(props: IGridLayoutProps) {
     super(props);
     const { layout, children, grid, width, group, containerPadding } = props;
-    const cols = getCols({ width, grid });
     this.state = {
-      ...(synchronizeLayoutWithChildren(
-        layout,
-        children,
-        cols,
-        group,
-      )),
       mounted: false,
+      layoutState: new LayoutState(layout, group, getCols({ width, grid }))
+        .synchronizeLayoutWithChildren(children),
       colWidth: calcColWidth(width, grid, containerPadding),
-    }
+    };
   }
 
   componentDidMount() {
@@ -180,29 +137,30 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     ) {
       const { layout, children, group, width, grid, containerPadding } = nextProps;
       this.setState({
-        ...synchronizeLayoutWithChildren(
-          layout,
-          children,
-          getCols(nextProps),
-          mergeTemporaryGroup(group, this.state.group),
-          this.state.focusItem,
-        ),
+        layoutState: this.state.layoutState
+          .update(layout, group, getCols({ width, grid }))
+          .synchronizeLayoutWithChildren(children),
         colWidth: calcColWidth(width, grid, containerPadding),
       });
     }
   }
 
   onDragStart = (i: string, x: number, y: number, ev: GridDragEvent) => {
-    const { layout, activeGroup: stateActiveGroup, focusItem: stateFocusItem } = this.state;
-    const l = getLayoutItem(layout, i);
+    const { layoutState } = this.state;
+    const l = layoutState.getLayoutItem(i);
+    const {
+      activeGroup: stateActiveGroup,
+      focusItem: stateFocusItem,
+    } = layoutState
+
     if (!l) {
       return;
     }
 
     // 在当前节点有容器的情况下。
     // 以下几种情况开启群组移动
-    let focusItem: LayoutItem | null = l;
-    let activeGroup: Group | null = null;
+    let focusItem: LayoutItem | undefined = l;
+    let activeGroup: Group | undefined;
     if (l.parent && (
       !stateActiveGroup                                                 // 1. 没有激活的容器时
       || stateActiveGroup.id !== l.parent                               // 2. 当前激活容器与当前节点的容器不一致时
@@ -217,126 +175,42 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     const dragItem = cloneLayoutItem(l);
     this.setState({
-      focusItem,
-      activeGroup,
-      oldActiveGroup: stateActiveGroup,
-      oldDragItem: dragItem,
-      oldLayout: this.state.layout,
+      layoutState: layoutState
+        .startDrag(dragItem, focusItem, activeGroup),
     }, () => {
       persist(ev.e);
       this.props.onLayoutSelect(focusItem ? [ focusItem ] : [], activeGroup);
-      this.props.onDragStart(layout, l, l, null, ev.e, ev.node);
+      this.props.onDragStart(layoutState.getLayout(), l, l, null, ev.e, ev.node);
     });
   }
 
-  moveElement = (
-    layout: LayoutItem[],
-    i: symbol | string,
-    { x, y, dx, dy }: { [key: string]: number },
-    moveWithParent = true,
-    stateFocusItem: LayoutItem,
-  ) => {
-    let focusItem = stateFocusItem;
-    const l = getLayoutItem(layout, String(i));
-    if (!l) {
-      return { layout, focusItem, placeholder: null } ;
-    }
-
-    const cols = getCols(this.props);
-    let placeholder;
-
-    // 移动容器
-    if (moveWithParent && l.parent) {
-      // const elementToMove
-      const { group } = this.state;
-      const container: Group = group[l.parent];
-      if (!container) {
-        return { layout, focusItem, placeholder: null };
-      }
-      const moved = container.layout;
-      moved.forEach(item => {
-        moveElement(
-          moved,
-          item,
-          item.x + dx,
-          item.y + dy,
-          true,
-          cols,
-          true,
-        );
-        return layout;
-      });
-
-      placeholder = {
-        w: l.w,
-        h: l.h,
-        x: l.x,
-        y: l.y,
-        placeholder: true,
-        i: l.parent,
-        z: TOP
-      };
-
-      layout = mergeLayout(this.state.layout, moved);
-      const rect = getBoundingRectFromLayout(layout.filter(i => i.parent && i.parent === focusItem.i));
-      focusItem = {
-        ...focusItem,
-        x: rect.x,
-        y: rect.y,
-        w: rect.right - rect.x,
-        h: rect.bottom - rect.y,
-        i: focusItem.i,
-      };
-    } else {
-      placeholder = {
-        w: l.w,
-        h: l.h,
-        x: l.x,
-        y: l.y,
-        placeholder: true,
-        i,
-        z: TOP
-      };
-
-      moveElement(
-        layout,
-        l,
-        x,
-        y,
-        true,
-        cols
-      );
-    }
-
-    return { layout, placeholder, focusItem };
-  }
-
   onDrag = (i: string, x: number, y: number, { e, node, dx, dy }: GridDragEvent) => {
-    const { oldDragItem, layout: stateLayout, activeGroup, focusItem: stateFocusItem } = this.state;
-    const l = getLayoutItem(stateLayout, i);
+    const { layoutState } = this.state;
+    const {
+      oldDragItem,
+      focusItem: stateFocusItem,
+      activeGroup,
+    } = this.state.layoutState;
+    const l = layoutState.getLayoutItem(i);
+
     if (!l || !stateFocusItem) {
       return;
     }
 
-    const { placeholder, layout, focusItem } = this.moveElement(
-      stateLayout,
-      i,
-      { x, y, dx, dy },
-      Boolean(activeGroup && stateFocusItem && activeGroup.id == stateFocusItem.i),
-      stateFocusItem,
-    );
+    const movedLayoutState = layoutState
+      .moveElement(i,
+        { x, y, dx, dy },
+        Boolean(activeGroup && stateFocusItem && activeGroup.id == stateFocusItem.i),
+      )
+      .drag();
+    const { layout, placeholder } = movedLayoutState;
 
     if (oldDragItem) {
       persist(e);
       this.props.onDrag(layout, oldDragItem, l, placeholder, e, node);
     }
 
-    this.setState({
-      layout,
-      focusItem,
-      activeDrag: placeholder,
-      dragging: true,
-    });
+    this.setState({ layoutState: movedLayoutState });
   }
 
   /**
@@ -348,17 +222,22 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
    * @param {Element} node The current dragging DOM element
    */
   onDragStop = (i: string, x: number, y: number, { e, node, dx, dy }: GridDragEvent) => {
-    const { oldDragItem, layout: stateLayout, dragging, oldActiveGroup, activeGroup, focusItem: stateFocusItem } = this.state;
-    const l = getLayoutItem(stateLayout, i);
-    if (!l || !stateFocusItem) {
+    const { layoutState } = this.state;
+    const {
+      oldDragItem,
+      dragging,
+      oldActiveGroup,
+      activeGroup,
+      focusItem,
+    } = layoutState;
+
+    const l = layoutState.getLayoutItem(i);
+
+    if (!l || !focusItem) {
       return;
     }
 
-    let layout = stateLayout;
-    if (dragging) {
-      const moved = this.moveElement(stateLayout, i, { x, y, dx, dy }, true, stateFocusItem);
-      layout = moved.layout;
-    }
+    const movedState = dragging ? layoutState.moveElement(i, { x, y, dx, dy }, true) : layoutState;
 
     if (!dragging && activeGroup && (
       oldActiveGroup === activeGroup &&
@@ -367,32 +246,26 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       this.selectItem(l);
     }
 
-    this.props.onDragStop(layout, oldDragItem, l, null, e, node);
+    this.props.onDragStop(movedState.layout, oldDragItem, l, null, e, node);
     // Set state
-    const { oldLayout } = this.state;
     this.setState({
-      activeDrag: null,
-      layout,
-      oldDragItem: undefined,
-      oldLayout: undefined,
-      bottom: bottom(layout),
-      dragging: false,
+      layoutState: movedState.endDrag(),
     });
 
-    this.onLayoutMaybeChanged(layout, oldLayout);
+    this.onLayoutMaybeChanged(layoutState.layout);
   }
 
   onDragContainerStart = (i: string | symbol, { e, node }: GridDragEvent) => {
-    const { group, layout } = this.state;
-    const activeGroup = group[i] as Group;
+    const { layoutState } = this.state;
+    const activeGroup = layoutState.getGroup(i);
     if (!activeGroup) {
-      return {
-        focusItem: null,
-        activeGroup: null,
-      };
+      return {};
     }
 
-    const rect = getBoundingRectFromLayout(layout.filter(i => i.parent && i.parent === activeGroup.id));
+    const rect = getBoundingRectFromLayout(
+      layoutState.layout.filter(i => i.parent && i.parent === activeGroup.id)
+    );
+
     const focusItem = {
       x: rect.x,
       y: rect.y,
@@ -409,74 +282,66 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   onResizeStart = (i: string | symbol, { x, y, w, h }: ResizeProps, { e, node }: GridResizeEvent) => {
-    const { layout } = this.state;
-    const l = getLayoutItem(layout, i);
+    const { layoutState } = this.state;
+    const l = layoutState.getLayoutItem(i);
     if (!l) {
       return;
     }
 
+    this.setState({ oldResizeItem: cloneLayoutItem(l)});
 
-    this.setState({
-      oldResizeItem: cloneLayoutItem(l),
-      oldLayout: this.state.layout
-    });
-
-    this.props.onResizeStart(layout, l, l, null, e, node);
+    this.props.onResizeStart(layoutState.layout, l, l, null, e, node);
   }
 
   onResize = (i: string | symbol, { w, h, x, y }: ResizeProps, { e, node }: GridResizeEvent, axis: Axis) => {
-    const { focusItem } = this.state;
-    if (!focusItem) {
+    const { layoutState } = this.state;
+    if (!layoutState.focusItem) {
       return;
     }
 
-    focusItem.w = w;
-    focusItem.h = h;
-    focusItem.x = x;
-    focusItem.y = y;
+    layoutState.focusItem = {
+      ...layoutState.focusItem,
+      w, h, x, y,
+    };
 
     // Create placeholder element (display only)
     const placeholder = {
-      w: focusItem.w,
-      h: focusItem.h,
-      x: focusItem.x,
-      y: focusItem.y,
+      w: layoutState.focusItem.w,
+      h: layoutState.focusItem.h,
+      x: layoutState.focusItem.x,
+      y: layoutState.focusItem.y,
       static: true,
       i,
       z: TOP,
     };
 
     // Re-compact the layout and set the drag placeholder.
-    const updatedLayout = mergeLayout(this.state.layout, [ focusItem ]);
-
     this.setState({
-      layout: updatedLayout,
-      activeDrag: placeholder,
-      focusItem,
+      layoutState: layoutState
+        .merge([ layoutState.focusItem ])
+        .set({ activeDrag: placeholder }),
     });
 
-    this.props.onResize(updatedLayout, focusItem, focusItem, null, e, node);
+    this.props.onResize(layoutState.layout, layoutState.focusItem, layoutState.focusItem, null, e, node);
   }
 
   onResizeStop = (i: string | symbol, { x, y, w, h }: ResizeProps, { e, node }: GridResizeEvent) => {
-    const { layout, oldResizeItem } = this.state;
-    const l = getLayoutItem(layout, i);
+    const { layoutState, oldResizeItem } = this.state;
+    const l = layoutState.getLayoutItem(i);
 
-    this.props.onResizeStop(layout, oldResizeItem, l, null, e, node);
+    this.props.onResizeStop(layoutState.layout, oldResizeItem, l, null, e, node);
+
 
     // Set state
     this.setState({
-      activeDrag: null,
-      layout,
-      oldResizeItem: null,
-      oldLayout: null,
-      bottom: bottom(layout),
+      layoutState: layoutState.set({ activeDrag: null }),
     })
-    this.props.onLayoutChange(layout);
+    this.props.onLayoutChange(layoutState.layout);
   }
 
   onContextMenu = (currentItem: LayoutItem, e: ReactMouseEvent) => {
-    const { focusItem } = this.state;
+    const { layoutState } = this.state;
+    const { focusItem } = layoutState;
     if (!this.props.onContextMenu) {
       return;
     }
@@ -507,14 +372,14 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     // * 则在保持容器选中的情况下，激活容器中的元素
     // * 此时容器中的元素可以自由活动，而不影响父容器
     return this.setState({
-      focusItem: l,
+      layoutState: this.state.layoutState.set({ focusItem: l }),
     });
 
   }
 
   onLayoutMaybeChanged(newLayout: Layout, oldLayout?: Layout | null) {
     if (!oldLayout) {
-      oldLayout = this.state.layout;
+      oldLayout = this.state.layoutState.layout;
     }
 
     if (!isEqual(oldLayout, newLayout)) {
@@ -523,26 +388,25 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   startSelection = (reselectItem?: LayoutItem) => {
-    this.deleteGroup(temporaryGroupId);
-    this.setState(({ group }) => ({
+    this.setState(({ layoutState }) => ({
       selecting: true,
-      activeGroup: undefined,
       selectedLayout: [],
-      oldDragItem: reselectItem,
-      focusItem: reselectItem,
-      oldLayout: reselectItem ? this.state.layout : null,
-      group: (delete group[temporaryGroupId] && group)
-    }));
+      layoutState: layoutState
+        .deleteGroup(temporaryGroupId)
+        .startDrag(reselectItem, reselectItem, undefined),
+    }), () => {
+      this.props.onLayoutChange(this.state.layoutState.layout);
+    });
   }
 
   selectLayoutItemByRect = (start?: MousePosition, end?: MousePosition) => {
-    const { selecting, layout, colWidth } = this.state;
+    const { selecting, colWidth, layoutState } = this.state;
     if (!selecting || !start || !end) {
       return this.setState({ selectedLayout: [] });
     }
 
     const selectedLayout = pickByRect(
-      layout,
+      layoutState.layout,
       getRectFromPoints(start, end, colWidth),
     );
 
@@ -558,26 +422,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     }
   }
 
-  deleteGroup = (groupId: symbol | string) => {
-    const targetContainer = this.state.group[groupId];
-    if (!targetContainer) {
-      return;
-    }
-
-    const { layout } = targetContainer;
-
-    const removedLayout = mergeLayout(this.state.layout, layout, i => {
-      if (i.parent === groupId) {
-        i.parent = i._parent;
-        delete i._parent;
-      }
-      return i;
-    });
-
-    this.setState({ layout: removedLayout });
-    this.props.onLayoutChange(removedLayout);
-  }
-
   selectGroup = (group: Group, groupRect: GridRect) => {
     if (!group) {
       return;
@@ -585,14 +429,15 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     const rect = groupRect || group.rect || getBoundingRectFromLayout(group.layout);
     this.setState({
-      activeGroup: group,
-      focusItem: {
-        x: rect.x,
-        y: rect.y,
-        w: rect.right - rect.x,
-        h: rect.bottom - rect.y,
-        i: group.id,
-      },
+      layoutState: this.state.layoutState.focus({
+          x: rect.x,
+          y: rect.y,
+          w: rect.right - rect.x,
+          h: rect.bottom - rect.y,
+          i: group.id,
+        },
+        group,
+      )
     });
   }
 
@@ -600,25 +445,32 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     if (!selectedLayout || selectedLayout.length <= 1) {
       return;
     }
+    const { layoutState } = this.state;
 
-    const group = { ...this.state.group };
-    const hoistedLayout = hoistSelectionByParent(selectedLayout, group);
+    const hoistedLayout = hoistSelectionByParent(selectedLayout, layoutState.groups);
     const rect = getBoundingRectFromLayout(hoistedLayout);
-    group[temporaryGroupId] = { id: temporaryGroupId, rect, layout: hoistedLayout };
+    const temporaryGroup = {
+      id: temporaryGroupId,
+      rect, layout:
+      hoistedLayout,
+      level: hoistedLayout.map(i => i.z).filter(z => z && !isNaN(z) && z !== defaultLevel) as number[],
+    };
+
     this.setState({
-      selectedLayout: hoistedLayout,
-      group,
-      activeGroup: group[temporaryGroupId],
-      focusItem: {
+      layoutState: layoutState.addGroup(
+        temporaryGroupId,
+        temporaryGroup,
+      ).focus({
         x: rect.x,
         y: rect.y,
         w: rect.right - rect.x,
         h: rect.bottom - rect.y,
         i: temporaryGroupId,
-      },
+      }, temporaryGroup),
     }, () => {
+      const { layoutState } = this.state;
       this.props.onLayoutChange(
-        mergeLayout(this.state.layout, hoistedLayout, i => {
+        mergeLayout(layoutState.layout, hoistedLayout, i => {
           return {
             ...i,
             _parent: i.parent,
@@ -626,8 +478,8 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
           }
         })
       );
-      this.props.onLayoutSelect(hoistedLayout, group[temporaryGroupId]);
-    });
+      this.props.onLayoutSelect(hoistedLayout, layoutState.getGroup[temporaryGroupId]);
+    })
   }
 
   processGridItem = (child: ReactChild) => {
@@ -640,7 +492,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       return child;
     }
 
-    const l = getLayoutItem(this.state.layout, String(key));
+    const l = this.state.layoutState.getLayoutItem(String(key));
     if (!l) {
       return child;
     }
@@ -650,7 +502,9 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       isDraggable, isResizable,
     } = props;
 
-    const { selectedLayout, focusItem } = state;
+    const { selectedLayout, layoutState } = state;
+    const { focusItem } = layoutState;
+
     const draggable = Boolean(
       !l.static && isDraggable && (l.isDraggable || l.isDraggable == null)
     );
@@ -674,7 +528,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   placeholder() {
-    const activeDrag = this.props.activeDrag || this.state.activeDrag;
+    const activeDrag = this.props.activeDrag || this.state.layoutState.activeDrag;
     if (!activeDrag) {
       return null;
     }
@@ -690,7 +544,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       {
         className: 'react-grid-placeholder',
       });
-
   }
 
   createGridItem = (
@@ -729,22 +582,19 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
   onContainerHandler(handlerName: keyof ResizeCallbacks<GridResizeCallback>): GridResizeCallback {
     return (i, { x, y, w, h }, { e, node }: GridResizeEvent) => {
-      const { focusItem, group: stateGroup } = this.state;
+      const { layoutState } = this.state;
+      const { focusItem } = layoutState;
       if (!focusItem) {
         return;
       }
-      const group: Group = stateGroup[focusItem.i];
+      const group: Group = layoutState.getGroup(focusItem.i);
 
       if (!group) {
         return;
       }
 
       if (handlerName === 'onResizeStart') {
-        return this.setState({
-          oldLayout: this.state.layout
-        }, () => {
-          this.props.onResizeStart(this.state.layout, focusItem, null, null, e, node);
-        });
+        this.props.onResizeStart(layoutState.layout, focusItem, null, null, e, node);
       }
 
       if (handlerName === 'onResize' || handlerName === 'onResizeStop') {
@@ -760,23 +610,18 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
           h: rect.bottom - rect.y,
           i: focusItem.i,
         };
-        const newState = {
-          layout: mergeLayout(this.state.layout, strechedLayout),
-          focusItem: updatedFocusItem,
-        };
+
+        const newState = layoutState.merge(strechedLayout).set({ focusItem: updatedFocusItem });
 
         if (handlerName === 'onResizeStop') {
-          Object.assign(newState,{
-            activeDrag: null,
-            oldResizeItem: null,
-            oldLayout: null,
-            bottom: bottom(this.state.layout),
-          });
+          newState.endDrag();
 
-          this.onLayoutMaybeChanged(layout, this.state.oldLayout);
+          this.onLayoutMaybeChanged(layout, newState.layout);
         }
 
-        this.setState(newState, () =>
+        this.setState({
+          layoutState: newState
+        }, () =>
           this.props[handlerName](newState.layout, focusItem, focusItem, null, e, node)
         );
       }
@@ -785,7 +630,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   renderGroupItem = (group: Group, rect: GridRect) => {
-    const { activeGroup, focusItem } = this.state;
+    const { activeGroup, focusItem } = this.state.layoutState;
 
     const selected = Boolean(activeGroup && activeGroup.id === group.id); // 是否激活
     const active = Boolean(focusItem && selected && focusItem.i === group.id);
@@ -814,31 +659,42 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       });
   }
 
-  group() {
-    const { selecting, group } = this.state;
-    const groups = [];
+  children() {
+    const { layoutState, selecting } = this.state;
+    const children = layoutState.getChildren();
 
-    if (!selecting && group[temporaryGroupId] && group[temporaryGroupId].layout.length) {
-      groups.push(
-        this.renderGroupItem(
-          group[temporaryGroupId],
-          getBoundingRectFromLayout(group[temporaryGroupId].layout)
-        )
-      );
-    }
+    const extraChildren: ReactChild[] = [];
+    const childKeyMap: { [key: string]: ReactChild } = {};
 
-    for (const key in group) {
-      if (group.hasOwnProperty(key)) {
-        const currentGroup: Group = group[key];
-        if (!currentGroup || !currentGroup.layout.length) {
-          continue;
-        }
-        const rect = getBoundingRectFromLayout(currentGroup.layout);
-        groups.push(this.renderGroupItem(currentGroup, rect))
+    React.Children.forEach(this.props.children, child => {
+      if (!isValidElement(child) || !child.key) {
+        extraChildren.push(child);
+        return;
       }
-    }
 
-    return groups;
+      childKeyMap[child.key] = child;
+    });
+
+    const temporary = (!selecting && layoutState.getGroup(temporaryGroupId)) ?
+      this.renderGroupItem(
+        layoutState.getGroup(temporaryGroupId),
+          getBoundingRectFromLayout(layoutState.getGroup(temporaryGroupId).layout)
+      ) : null;
+
+    return <>
+      {temporary}
+      {children.map(child => {
+        if (child.type === 'group') {
+          if (!child.layout || !child.layout.length) {
+            return null;
+          }
+          const rect = getBoundingRectFromLayout(child.layout);
+          return this.renderGroupItem(child, rect);
+        }
+        const key = child.child.key;
+        return this.processGridItem(key && childKeyMap.hasOwnProperty(key) ? childKeyMap[key] : child.child);
+      })}
+    </>;
   }
 
   getOffsetParent = () => {
@@ -872,8 +728,9 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   resizer = () => {
-    const { focusItem, activeGroup, colWidth } = this.state;
-    if (!focusItem) {
+    const { colWidth, mounted } = this.state;
+    const { focusItem, activeGroup } = this.state.layoutState;
+    if (!focusItem || !mounted) {
       return null;
     }
 
@@ -898,7 +755,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       h={h}
       {...resizeCallbacks}
       className={resizingGroup ? 'group-resizer' : 'item-resizer'}
-      offsetParent={this.offsetParent.current}
+      offsetParent={this.getOffsetParent}
       calcPosition={this.getPositionCalculator()}
       calcWH={this.getWHCalculator()}
       colWidth={colWidth}
@@ -906,10 +763,10 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     />;
   }
 
-
   render() {
     const { extraRender, width, wrapperStyle = {}, style } = this.props;
-    const { bottom, mounted, colWidth } = this.state;
+    const { layoutState, colWidth } = this.state;
+    const { bottom } = layoutState;
 
     return <Selection
       onSelectStart={this.startSelection}
@@ -927,12 +784,9 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         }}
         ref={this.offsetParent}
       >
-        {mounted ? <>
-          {this.group()}
-          {React.Children.map(this.props.children, this.processGridItem)}
-          {this.placeholder()}
-          {this.resizer()}
-        </> : null}
+        {this.children()}
+        {this.placeholder()}
+        {this.resizer()}
         {extraRender ? extraRender() : null}
       </div>
     </Selection>

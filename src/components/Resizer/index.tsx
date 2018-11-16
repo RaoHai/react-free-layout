@@ -1,9 +1,9 @@
 import React, { PureComponent } from 'react';
-import { OffsetParent, setTransform } from '../../utils/index';
+import { OffsetParent, setTransform, getOffsetParent } from '../../utils/index';
 import { DraggableCore, DraggableData } from 'react-draggable';
 import { Position } from '../GridItem';
 import classnames from 'classnames';
-import { LayoutItem } from '../Layout';
+import { LayoutItem } from '../../model/LayoutState';
 
 export interface AxisOpt {
   key: string;
@@ -57,7 +57,7 @@ export type GridResizeCallback = (
 export type ResizeableProps = ResizeCallbacks<GridResizeCallback> &
 LayoutItem & {
   className?: {};
-  offsetParent?: OffsetParent | null;
+  offsetParent?: OffsetParent;
   draggableOpts?: {}
   calcPosition: (...args: any) => Position;
   calcWH: (...args: any) => { w: number, h: number };
@@ -143,8 +143,8 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
         let height = resizingPosition.height;
 
         if (direction[0] === -1) {
-          const dx = Math.round((cX - this.state.lastX) / this.props.colWidth) * this.props.colWidth;
-          const _w = originPosition.width - dx;
+          const dx = Math.round((Math.max(cX, 0) - this.state.lastX) / this.props.colWidth) * this.props.colWidth;
+          const _w = Math.max(originPosition.width - dx, 0);
           const right = originPosition.left + originPosition.width;
           const _x = right - _w;
           width = _w;
@@ -155,8 +155,8 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
         }
 
         if (direction[1] === -1) {
-          const dy = Math.round((cY - this.state.lastY) / this.props.rowHeight) * this.props.rowHeight;
-          const _h = originPosition.height - dy;
+          const dy = Math.round((Math.max(cY, 0) - this.state.lastY) / this.props.rowHeight) * this.props.rowHeight;
+          const _h = Math.max(originPosition.height - dy, 0);
           const bottom = originPosition.top + originPosition.height;
           const _y = bottom - _h;
           height = _h;
@@ -165,6 +165,9 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
         } else {
           height = height + direction[1] * deltaY;
         }
+
+        x = Math.max(0, x);
+        y = Math.max(0, y);
 
         const { w: _w, h: _h } = calcWH({ width, height, x, y });
 
@@ -198,7 +201,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
   }
 
   render() {
-    const { draggableOpts, calcPosition, className } = this.props;
+    const { draggableOpts, calcPosition, className, offsetParent } = this.props;
     const { x, y, w, h, resizing } = this.state;
     const position = calcPosition(x, y, w, h);
     const style = setTransform(position);
@@ -213,7 +216,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
             onStop={this.resizeHandler('onResizeStop', { key, direction })}
             onStart={this.resizeHandler('onResizeStart', { key, direction })}
             onDrag={this.resizeHandler('onResize', { key, direction })}
-            offsetParent={document.body}
+            offsetParent={getOffsetParent(offsetParent)}
           >
             <span className={`react-resizable-handle react-resizable-handle-${key}`} />
           </DraggableCore>)}
