@@ -236,7 +236,7 @@ export default class GridItem extends Component<GridItemProps, {
       onContextMenu,
     });
 
-    newChild = this.state.mounted ? this.mixinDraggable(newChild, isDraggable) : newChild;
+    newChild = canUseDOM && this.state.mounted ? this.mixinDraggable(newChild, isDraggable) : newChild;
     return newChild;
   }
 }

@@ -4,6 +4,7 @@
     "outDir": "lib",
     "target": "es5",
     "rootDir": "src",
+    "module": "commonjs",
     "declaration": true
   },
   "exclude": [
