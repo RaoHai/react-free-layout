@@ -46,7 +46,7 @@ describe('single layout', () => {
     expect(toJSON(wrapper));
   });
 
-  test('layout with sorter', () => {
+  test.skip('layout with sorter', () => {
     const wrapper = mount(<Layout
       layout={[
         { i: 'a', x: 10, y: 10, w: 10, h: 10, z: 2 },

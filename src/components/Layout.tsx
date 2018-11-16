@@ -76,11 +76,11 @@ export interface IGridLayoutState {
 
   activeGroup?: Group | null;
   oldActiveGroup?: Group | null;
-  maxZ: number;
+  // maxZ: number;
   bottom: number;
   colWidth: number;
 
-  children: ReactChild[];
+  // children: ReactChild[];
 }
 
 const defaultProps = {
@@ -425,39 +425,41 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   onResize = (i: string | symbol, { w, h, x, y }: ResizeProps, { e, node }: GridResizeEvent, axis: Axis) => {
-    const { layout, oldResizeItem } = this.state;
-    const l = getLayoutItem(layout, i);
-    if (!l) {
+    const { focusItem } = this.state;
+    if (!focusItem) {
       return;
     }
 
-    l.w = w;
-    l.h = h;
-    l.x = x;
-    l.y = y;
+    focusItem.w = w;
+    focusItem.h = h;
+    focusItem.x = x;
+    focusItem.y = y;
 
     // Create placeholder element (display only)
     const placeholder = {
-      w: l.w,
-      h: l.h,
-      x: l.x,
-      y: l.y,
+      w: focusItem.w,
+      h: focusItem.h,
+      x: focusItem.x,
+      y: focusItem.y,
       static: true,
       i,
       z: TOP,
     };
 
-    this.props.onResize(layout, oldResizeItem, l, placeholder, e, node);
-
     // Re-compact the layout and set the drag placeholder.
+    const updatedLayout = mergeLayout(this.state.layout, [ focusItem ]);
+
     this.setState({
-      layout,
-      activeDrag: placeholder
+      layout: updatedLayout,
+      activeDrag: placeholder,
+      focusItem,
     });
+
+    this.props.onResize(updatedLayout, focusItem, focusItem, null, e, node);
   }
 
   onResizeStop = (i: string | symbol, { x, y, w, h }: ResizeProps, { e, node }: GridResizeEvent) => {
-    const { layout, oldResizeItem, oldLayout } = this.state;
+    const { layout, oldResizeItem } = this.state;
     const l = getLayoutItem(layout, i);
 
     this.props.onResizeStop(layout, oldResizeItem, l, null, e, node);
@@ -469,9 +471,8 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       oldResizeItem: null,
       oldLayout: null,
       bottom: bottom(layout),
-    });
-
-    this.onLayoutMaybeChanged(layout, oldLayout);
+    })
+    this.props.onLayoutChange(layout);
   }
 
   onContextMenu = (currentItem: LayoutItem, e: ReactMouseEvent) => {
@@ -769,7 +770,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
             activeDrag: null,
             oldResizeItem: null,
             oldLayout: null,
-            bottom: bottom(layout),
+            bottom: bottom(this.state.layout),
           });
 
           this.onLayoutMaybeChanged(layout, this.state.oldLayout);
@@ -908,7 +909,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
   render() {
     const { extraRender, width, wrapperStyle = {}, style } = this.props;
-    const { bottom, mounted, colWidth, children } = this.state;
+    const { bottom, mounted, colWidth } = this.state;
 
     return <Selection
       onSelectStart={this.startSelection}
@@ -928,7 +929,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       >
         {mounted ? <>
           {this.group()}
-          {React.Children.map(children, this.processGridItem)}
+          {React.Children.map(this.props.children, this.processGridItem)}
           {this.placeholder()}
           {this.resizer()}
         </> : null}

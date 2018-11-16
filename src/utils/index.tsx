@@ -23,12 +23,12 @@ export function synchronizeLayoutWithChildren(
   group: Groups,
   focusItem?: LayoutItem | null,
 ): {
-  maxZ: number;
+  // maxZ: number;
   layout: Layout;
   bottom: number;
   group: Groups,
   focusItem?: LayoutItem | null,
-  children: JSX.Element[],
+  // children: JSX.Element[],
 } {
   let layout: Layout = initialLayout;
 
@@ -47,13 +47,13 @@ export function synchronizeLayoutWithChildren(
     }
   }
 
-  const levelMap: LevelMap = {
-    0: [],
-  };
+  // const levelMap: LevelMap = {
+  //   0: [],
+  // };
 
   React.Children.forEach(children, (child: React.ReactChild, index) => {
     if (!React.isValidElement(child) || !child.key) {
-      levelMap[0].push(child);
+      // levelMap[0].push(child);
       return;
     }
     const definition = getLayoutItem(layout, String(child.key));
@@ -74,27 +74,27 @@ export function synchronizeLayoutWithChildren(
       layout[index] = g ? g : { w: 1, h: 1, x: 0, y: bottom(layout), i: String(child.key) };
     }
     const item = layout[index];
-    const z = item.hasOwnProperty('z') && item.z && !isNaN(item.z) ? item.z : 0;
-    if (!levelMap[z]) {
-      levelMap[z] = [];
-    }
+    // const z = item.hasOwnProperty('z') && item.z && !isNaN(item.z) ? item.z : 0;
+    // if (!levelMap[z]) {
+    //   levelMap[z] = [];
+    // }
 
-    levelMap[z].push(child);
+    // levelMap[z].push(child);
 
     if (focusItem && item.i === focusItem.i) {
       focusItemVisited = true;
     }
   });
 
-  let sortedChildren: JSX.Element[] = [];
-  Object.keys(levelMap).sort().map(i => {
-    sortedChildren = sortedChildren.concat(levelMap[i])
-  });
+  // let sortedChildren: JSX.Element[] = [];
+  // Object.keys(levelMap).sort().map(i => {
+  //   sortedChildren = sortedChildren.concat(levelMap[i])
+  // });
 
-  console.log('>>> levelMap', levelMap, sortedChildren);
+  // console.log('>>> levelMap', levelMap, sortedChildren);
   return {
-    maxZ: Math.max(...Object.keys(levelMap).map(i => Number(i))),
-    children: sortedChildren,
+    // maxZ: Math.max(...Object.keys(levelMap).map(i => Number(i))),
+    // children: sortedChildren,
     focusItem: focusItemVisited ? focusItem : null,
     layout,
     bottom: bottom(layout),
@@ -328,12 +328,8 @@ export function hoistSelectionByParent(
   , []).concat(singleItems) : layout;
 }
 
-export function updateLayout(
-  layout: Layout,
-  newLayout: Layout,
-  iterator: (...args: {}[]) => LayoutItem = (...args) => Object.assign({}, ...args),
-  extraValue?: (i: LayoutItem) => LayoutItem | {},
-) {
+export function mergeLayout(layout: Layout, newLayout: Layout, extraValue?: (i: LayoutItem) => LayoutItem | {}) {
+
   if (!newLayout || !newLayout.length) {
     return layout;
   }
@@ -341,27 +337,10 @@ export function updateLayout(
   return layout.map(item => {
     const found = newLayout.find(n => n.i === item.i);
     if (found) {
-      return iterator(
-        item,
-        found,
-        extraValue && typeof extraValue === 'function' ? extraValue(found) : extraValue || {},
-      );
+      return Object.assign(item, found, typeof extraValue === 'function' ? extraValue(found) : extraValue);
     }
     return item;
   });
-}
-
-export function mergeLayout(
-  layout: Layout,
-  newLayout: Layout,
-  extraValue?: (i: LayoutItem) => LayoutItem | {},
-) {
-  return updateLayout(
-    layout,
-    newLayout,
-    (...args: any[]) => Object.assign(args[0], ...args.slice(1)),
-    extraValue
-  );
 }
 
 export function getBoundingRectFromLayout(layout: Layout): GridRect {
