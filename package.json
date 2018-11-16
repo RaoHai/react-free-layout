@@ -1,6 +1,6 @@
 {
   "name": "@alipay/deer-free-layout",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "main": "lib/index.js",
   "files": [
     "lib"
