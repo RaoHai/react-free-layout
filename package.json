@@ -140,7 +140,8 @@
     },
     "coverageReporters": [
       "json",
-      "html"
+      "html",
+      "lcov"
     ],
     "moduleFileExtensions": [
       "web.js",
