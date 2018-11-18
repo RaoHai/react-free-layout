@@ -167,7 +167,9 @@ export default class LayoutState {
 
      children = children
      .concat(
-       groups.map(group => ({ ...group, type: 'group' })) as GroupChild[]
+       groups.reduce((prev, group) => (
+         group.layout.length ? prev.concat([({ ...group, type: 'group' })]) : prev)
+        , [] as GroupChild[])
      )
      .concat(
        items.map(item => ({ ...item, type: 'item' })) as LayoutChild[]

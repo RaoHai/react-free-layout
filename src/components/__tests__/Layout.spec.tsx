@@ -46,7 +46,7 @@ describe('single layout', () => {
     expect(toJSON(wrapper));
   });
 
-  test.skip('layout with sorter', () => {
+  test('layout with sorter', () => {
     const wrapper = mount(<Layout
       layout={[
         { i: 'a', x: 10, y: 10, w: 10, h: 10, z: 2 },
@@ -62,7 +62,6 @@ describe('single layout', () => {
     </Layout>);
 
     expect(wrapper);
-    expect((wrapper.state() as any).maxZ).toEqual(2);
     const children = wrapper.find('GridItem');
     expect(children).toHaveLength(3);
     expect((children.at(0).instance().props as any).i).toEqual('c');
