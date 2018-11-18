@@ -1,7 +1,5 @@
 language: node_js
 
-sudo: false
-
 notifications:
   email:
   - surgesoft@gmail.com
