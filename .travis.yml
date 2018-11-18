@@ -3,8 +3,7 @@ language: node_js
 notifications:
   email:
   - surgesoft@gmail.com
-before_install:
-  - chmod +x build.sh
+
 script:
 - |
     if [ "$TEST_TYPE" = test ]; then
