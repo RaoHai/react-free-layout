@@ -1,6 +1,46 @@
-import { percentile, getCols, layoutlize, bottom, bringForward, bringBack, bringTop, bringBottom } from '../index';
+import { percentile, getCols, layoutlize, bottom, bringForward, bringBack, bringTop, bringBottom, layoutEqual, isEqual } from '../index';
 
 describe('utils functions', () => {
+  test('isEquals', () => {
+    expect(isEqual(undefined, { i: 'a', x: 10, y: 10, w: 10, h: 10 })).toBeFalsy();
+    expect(isEqual(
+      { i: 'a', x: 10, y: 10, w: 10, h: 10, static: true },
+      { i: 'a', x: 10, y: 10, w: 10, h: 10 }
+    )).toBeFalsy();
+
+    expect(isEqual(
+      { i: 'a', x: 10, y: 10, w: 10, h: 10, static: true },
+      { i: 'a', x: 10, y: 10, w: 10, h: 10, moved: true }
+    )).toBeFalsy();
+
+    expect(isEqual(
+      { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+      { i: 'a', x: 10, y: 10, w: 10, h: 11 }
+    )).toBeFalsy();
+
+    expect(isEqual(undefined, null as any)).toBeTruthy();
+  });
+
+  test('layout equals', () => {
+    expect(layoutEqual([
+      { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+      { i: 'b', x: 25, y: 10, w: 10, h: 10 }
+    ], [
+      { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+      { i: 'b', x: 25, y: 10, w: 10, h: 10 }
+    ])).toBeTruthy();
+
+    expect(layoutEqual([
+      { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+      { i: 'b', x: 25, y: 10, w: 10, h: 10 }
+    ], [
+      { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+      { i: 'b', x: 23, y: 10, w: 10, h: 10 }
+    ])).toBeFalsy();
+  });
+
+
+
   test('utils percentile', () => {
     const width = 1024;
     const layout = [

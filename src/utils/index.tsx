@@ -17,6 +17,72 @@ export function getLayoutItem(layout: Layout, key: string | symbol): LayoutItem 
   return layout.find(({ i }) => i === key);
 }
 
+export function layoutEqual(value: LayoutItem[], other: LayoutItem[]) {
+  if (value.length !== other.length) {
+    return false;
+  }
+
+  for (let i = 0; i < value.length; i++) {
+    if (!isEqual(value[i], other[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export function isEqual<T extends Object>(value: T | undefined, other: T | undefined) {
+  if (value === other) {
+    return true;
+  }
+
+  if (!value || !other) {
+    if (!value && !other) {
+      return true;;
+    }
+    return false
+  }
+
+  if (Object.keys(value).length !== Object.keys(other).length) {
+    return false;
+  }
+
+  for (const key in value) {
+    if (value.hasOwnProperty(key)) {
+      if (!other.hasOwnProperty(key)) {
+        return false;
+      }
+
+      if (value[key] !== other[key]) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+export function classNames(...args: (string | {} | undefined)[]): string {
+  const cls: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (typeof arg === 'string') {
+      cls.push(arg);
+    } else if (Array.isArray(arg)) {
+      cls.push(classNames(...arg));
+    } else if (typeof arg === 'object') {
+      for (const key in arg) {
+        if (arg.hasOwnProperty(key) && arg[key]) {
+          cls.push(key);
+        }
+      }
+    }
+  }
+
+  return cls.join(' ');
+}
+
 export function setTransform({ top, left, width, height }: Position, z: number = 1): {} {
   // Replace unitless items with px
   const translate = `translate(${left}px,${top}px)`;

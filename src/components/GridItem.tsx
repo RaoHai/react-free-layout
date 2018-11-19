@@ -1,7 +1,6 @@
 import React, { Component, MouseEventHandler } from 'react';
 import { DraggableCore, DraggableData } from 'react-draggable';
-import classNames from 'classnames';
-import { setTransform, getOffsetParent, OffsetParent } from '../utils';
+import { setTransform, getOffsetParent, OffsetParent, classNames } from '../utils';
 import { LayoutItem } from '../model/LayoutState';
 
 const canUseDOM = !!(

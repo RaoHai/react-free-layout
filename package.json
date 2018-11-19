@@ -23,7 +23,6 @@
     "lib"
   ],
   "dependencies": {
-    "classnames": "^2.2.6",
     "lodash.isequal": "^4.5.0",
     "react-draggable": "^3.0.5"
   },
@@ -41,7 +40,6 @@
     "@storybook/addon-storysource": "^4.0.2",
     "@storybook/cli": "^4.0.2",
     "@storybook/react": "^4.0.2",
-    "@types/classnames": "^2.2.6",
     "@types/enzyme": "^3.1.14",
     "@types/enzyme-adapter-react-16": "^1.0.3",
     "@types/hoist-non-react-statics": "^3.0.1",

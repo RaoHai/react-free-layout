@@ -1,8 +1,7 @@
 import React, { PureComponent } from 'react';
-import { OffsetParent, setTransform, getOffsetParent } from '../../utils/index';
+import { OffsetParent, setTransform, getOffsetParent, classNames } from '../../utils';
 import { DraggableCore, DraggableData } from 'react-draggable';
 import { Position } from '../GridItem';
-import classnames from 'classnames';
 import { LayoutItem } from '../../model/LayoutState';
 
 export interface AxisOpt {
@@ -205,7 +204,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
     const { x, y, w, h, resizing } = this.state;
     const position = calcPosition(x, y, w, h);
     const style = setTransform(position);
-    const cls = classnames('react-grid-layout-resizer', className);
+    const cls = classNames('react-grid-layout-resizer', className);
     return (
       <>
         { resizing ? <div className="react-grid-layout-selection-helper" /> : null }

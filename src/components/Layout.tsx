@@ -1,7 +1,6 @@
 import React, { ReactChild, MouseEvent as ReactMouseEvent, isValidElement } from 'react';
-import isEqual from 'lodash.isequal';
-import classnames from 'classnames';
 import LayoutState, { Groups, Group, LayoutItem, GridRect, defaultLevel } from '../model/LayoutState';
+import { classNames, isEqual, layoutEqual } from '../utils';
 
 import {
   cloneLayoutItem,
@@ -131,7 +130,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
   componentWillReceiveProps(nextProps: IGridLayoutProps) {
     if (
-      !isEqual(nextProps.layout, this.props.layout) ||
+      !layoutEqual(nextProps.layout, this.props.layout) ||
       !isEqual(nextProps.activeDrag, this.props.activeDrag) ||
       !isEqual(nextProps.group, this.props.group)
     ) {
@@ -634,7 +633,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     const selected = Boolean(activeGroup && activeGroup.id === group.id); // 是否激活
     const active = Boolean(focusItem && selected && focusItem.i === group.id);
-    const className = classnames('react-grid-layout-group react-selection-placeholder', {
+    const className = classNames('react-grid-layout-group react-selection-placeholder', {
       'temporary-group': group.id === temporaryGroupId,
     });
 
