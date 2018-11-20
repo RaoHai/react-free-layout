@@ -3,7 +3,8 @@ import React from 'react';
 import { mount } from 'enzyme';
 import Layout, { IGridLayoutState } from '../Layout';
 import { generateGroup, generateDOM, generateLayout, selectRange, mouseUp } from '../../../test/testUtils';
-import { groupLayout } from '../../utils/index';
+import { groupLayout } from '../../utils/layout';
+
 const layout = generateLayout();
 
 describe('Group', () => {

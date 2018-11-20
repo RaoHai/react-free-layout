@@ -1,21 +1,25 @@
 import React, { ReactChild, MouseEvent as ReactMouseEvent, isValidElement } from 'react';
-import LayoutState, { Groups, Group, LayoutItem, GridRect, defaultLevel } from '../model/LayoutState';
-import { classNames, isEqual, layoutEqual } from '../utils';
+import LayoutState, { Groups, Group, LayoutItem, GridRect, defaultLevel, Layout } from '../model/LayoutState';
+import { classNames, isEqual } from '../utils';
 
 import {
-  cloneLayoutItem,
-  pickByRect,
   getRectFromPoints,
-  getBoundingRectFromLayout,
   noop,
-  stretchLayout,
-  hoistSelectionByParent,
-  calcPosition,
   Position,
-  mergeLayout,
-  getCols,
-  calcColWidth,
 } from '../utils';
+
+import {
+  calcColWidth,
+  calcPosition,
+  cloneLayoutItem,
+  getBoundingRectFromLayout,
+  getCols,
+  hoistSelectionByParent,
+  layoutEqual,
+  mergeLayout,
+  pickByRect,
+  stretchLayout,
+} from '../utils/layout';
 
 import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, Axis, GridDragCallback } from './GridItem';
 import { DraggableData } from 'react-draggable';
@@ -24,10 +28,10 @@ import Resizer, { ResizeCallbacks, ResizeProps, SelectCallbacks, GridResizeCallb
 import { persist } from '../utils/events';
 import { DraggerEvent } from './Dragger/index';
 
+
 export const temporaryGroupId = Symbol('template');
 
 const TOP = 999;
-export type Layout = LayoutItem[];
 export interface Group {
   id: string | symbol
   rect?: GridRect;

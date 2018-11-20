@@ -1,4 +1,5 @@
-import { percentile, getCols, layoutlize, bottom, bringForward, bringBack, bringTop, bringBottom, layoutEqual, isEqual } from '../index';
+import { isEqual } from '../index';
+import { percentile, getCols, layoutlize, bringForward, bringBack, bringTop, bringBottom, layoutEqual, bottom } from '../layout';
 
 describe('utils functions', () => {
   test('isEquals', () => {

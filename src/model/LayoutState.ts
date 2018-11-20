@@ -1,5 +1,11 @@
 import React, { ReactElement } from 'react';
-import { getLayoutItem, bottom, moveElement, mergeLayout, getBoundingRectFromLayout } from '../utils/index';
+import {
+  bottom,
+  getBoundingRectFromLayout,
+  getLayoutItem,
+  mergeLayout,
+  moveElement,
+} from '../utils/layout';
 
 export interface LayoutItem {
   w: number;
@@ -20,6 +26,9 @@ export interface LayoutItem {
   parent?: string | symbol;
   _parent?: string | symbol;
 }
+
+export type Layout = LayoutItem[];
+
 
 export interface GridRect {
   x: number;

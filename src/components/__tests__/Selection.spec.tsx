@@ -3,8 +3,8 @@ import { mount } from 'enzyme';
 import { mouseMove, mouseUp, generateDOM, selectRange, touchMove, touchEnd } from '../../../test/testUtils';
 import Selection from '../Selection';
 import Layout, { temporaryGroupId, IGridLayoutState, Group } from '../Layout';
-import { groupLayout, splitGroup } from '../../utils/index';
 import { LayoutItem } from '../../model/LayoutState';
+import { groupLayout, splitGroup } from '../../utils/layout';
 
 describe('Selection', () => {
   test('Selection', () => {
