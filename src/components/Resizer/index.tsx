@@ -10,7 +10,12 @@ export interface AxisOpt {
 }
 
 export type ResizeProps = Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'>;
-export type CallbackItem = { e: MouseEvent | React.SyntheticEvent<MouseEvent>; node: DraggableData['node']; size: Position };
+export interface CallbackItem {
+  e: MouseEvent | React.SyntheticEvent<MouseEvent>;
+  node: DraggableData['node'];
+  size: Position;
+};
+
 export type ResizeCallback = (e: MouseEvent | React.SyntheticEvent<MouseEvent>, data: any) => ResizeProps | void;
 
 export interface SelectCallbacks<T> {
@@ -82,12 +87,6 @@ export interface ResizeState {
 }
 
 export default class Resizer extends PureComponent<ResizeableProps, ResizeState> {
-  state: ResizeState = {
-    ...Resizer.derivedStateFromProps(this.props),
-    lastX: 0,
-    lastY: 0,
-    resizing: false,
-  };
 
   static derivedStateFromProps(props: ResizeableProps) {
     return {
@@ -99,6 +98,12 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
     };
   }
 
+  state: ResizeState = {
+    ...Resizer.derivedStateFromProps(this.props),
+    lastX: 0,
+    lastY: 0,
+    resizing: false,
+  };
   // a poll implement of static getDerivedStateFromProps
   componentWillReceiveProps(nextProps: ResizeableProps) {
     this.setState(state => ({ ...state, ...Resizer.derivedStateFromProps(nextProps) }))
@@ -106,7 +111,8 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
 
   resizeHandler = (handlerName: keyof ResizeCallbacks<any>, axisOptions: AxisOpt) => {
     return (e: DraggerEvent, data: DraggableData) => {
-      let { i, x, y, w, h, calcPosition, calcWH, widthConstrains, heightConstrains } = this.props;
+      const { i, calcPosition, calcWH, widthConstrains, heightConstrains } = this.props;
+      let { x, y, w, h } = this.props;
       const {
         deltaX,
         deltaY,
@@ -145,11 +151,11 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
 
         if (direction[0] === -1) {
           const dx = Math.round((Math.max(cX, 0) - this.state.lastX) / this.props.colWidth) * this.props.colWidth;
-          const _w = executeConstrains(originPosition.width - dx, widthConstrains);
+          const rw = executeConstrains(originPosition.width - dx, widthConstrains);
           const right = originPosition.left + originPosition.width;
-          const _x = right - _w;
-          width = _w;
-          resizingX = Math.round(_x / this.props.colWidth);
+          const rx = right - rw;
+          width = rw;
+          resizingX = Math.round(rx / this.props.colWidth);
           x = resizingX;
         } else {
           width = executeConstrains(width + direction[0] * deltaX, widthConstrains);
@@ -157,11 +163,11 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
 
         if (direction[1] === -1) {
           const dy = Math.round((Math.max(cY, 0) - this.state.lastY) / this.props.rowHeight) * this.props.rowHeight;
-          const _h = executeConstrains(originPosition.height - dy, heightConstrains);
+          const rh = executeConstrains(originPosition.height - dy, heightConstrains);
           const bottom = originPosition.top + originPosition.height;
-          const _y = bottom - _h;
-          height = _h;
-          resizingY = Math.round(_y / this.props.rowHeight);
+          const ry = bottom - rh;
+          height = rh;
+          resizingY = Math.round(ry / this.props.rowHeight);
           y = resizingY;
         } else {
           height = executeConstrains(height + direction[1] * deltaY, heightConstrains);
@@ -170,7 +176,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
         x = Math.max(0, x);
         y = Math.max(0, y);
 
-        const { w: _w, h: _h } = calcWH({ width, height, x, y });
+        const { w: tw, h: th } = calcWH({ width, height, x, y });
 
         size = {
           width,
@@ -179,9 +185,9 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
           top: Math.round(this.props.rowHeight * y),
         };
 
-        w = _w;
-        h = _h;
-        layout = { x, y, w: _w, h: _h };
+        w = tw;
+        h = th;
+        layout = { x, y, w: tw, h: th };
       }
 
       // const resizin

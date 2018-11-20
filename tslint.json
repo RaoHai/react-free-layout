@@ -13,7 +13,7 @@
       "config/**/*.js",
       "node_modules/**/*.ts",
       "coverage/lcov-report/*.js",
-      "**/__tests/*.{ts,tsx}"
+      "**/__tests__/*.{ts,tsx}"
     ]
   }
 }
