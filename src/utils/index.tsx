@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom';
 import { Layout, temporaryGroupId, IGridLayoutProps } from '../components/Layout';
-import Selection, { MousePosition } from '../components/Selection';
+import { MousePosition } from '../components/Selection';
 import { Groups, Group, LayoutItem, GridRect, defaultLevel } from '../model/LayoutState';
 
 export interface Position {
@@ -199,18 +199,18 @@ export function getTouch(e: TouchEvent, identifier: number): { clientX: number, 
          (e.changedTouches && findInArray(e.changedTouches, t => identifier === t.identifier));
 }
 
-export function getControlPosition(
+export function getControlPosition<T extends React.Component<{ offsetParent?: OffsetParent }>>(
   e: TouchEvent,
   identifier: number,
-  selection: Selection,
+  t: T,
 ) {
   const touchObj = typeof identifier === 'number' ? getTouch(e, identifier) : null;
-  const node = ReactDOM.findDOMNode(selection) as HTMLElement;
+  const node = ReactDOM.findDOMNode(t) as HTMLElement;
   if (!node) {
     return;
   }
 
-  return offsetXYFromParent(touchObj || e as any, selection.props.offsetParent);
+  return offsetXYFromParent(touchObj || e as any, t.props.offsetParent);
 }
 
 export function getOffsetParent(offsetParent?: OffsetParent): HTMLElement {

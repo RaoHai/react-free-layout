@@ -224,7 +224,7 @@ describe('Events', () => {
     handler.simulate('mouseup', { clientX: 101, clientY: 101 });
 
     const state = wrapper.state() as IGridLayoutState;
-    expect(state.layoutState.focusItem && state.layoutState.focusItem.i).toEqual('a');
+    expect(state.layoutState.focusItem && state.layoutState.focusItem.i).toEqual('a+b');
   });
 
   test('drag selected group', () => {

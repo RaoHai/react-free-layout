@@ -1,5 +1,6 @@
 import React, { Component, MouseEventHandler } from 'react';
-import { DraggableCore, DraggableData } from 'react-draggable';
+// import { DraggableData } from 'react-draggable';
+import Draggable, { DraggableData, DraggerEvent } from './Dragger';
 import { setTransform, getOffsetParent, OffsetParent, classNames } from '../utils';
 import { LayoutItem } from '../model/LayoutState';
 
@@ -10,7 +11,7 @@ const canUseDOM = !!(
 );
 
 export interface GridDragEvent {
-  e: MouseEvent | React.SyntheticEvent<MouseEvent>;
+  e: DraggerEvent;
   node: DraggableData['node'];
   newPosition: { x: number; y: number, };
   dx: number;
@@ -18,7 +19,7 @@ export interface GridDragEvent {
 }
 
 export interface GridResizeEvent {
-  e: MouseEvent | React.SyntheticEvent<MouseEvent>;
+  e: DraggerEvent;
   axis?: {};
   node: DraggableData['node'];
   size?: Position;
@@ -120,7 +121,7 @@ export default class GridItem extends Component<GridItemProps, {
   }
 
   onDragHandler(handlerName: keyof GridDragCallbacks<GridDragCallback>) {
-    return (e: MouseEvent, { node, deltaX, deltaY }: DraggableData) => {
+    return (e: DraggerEvent, { node, deltaX, deltaY }: DraggableData) => {
       const handler = this.props[handlerName];
       if (!handler) {
         return;
@@ -172,20 +173,20 @@ export default class GridItem extends Component<GridItemProps, {
   mixinDraggable(child: React.ReactElement<any>, draggable: boolean): React.ReactElement<any> {
     const offsetParent = getOffsetParent(this.props.offsetParent);
     return (
-      <DraggableCore
+      <Draggable
         onStart={this.onDragHandler("onDragStart")}
         onDrag={this.onDragHandler("onDrag")}
         onStop={this.onDragHandler("onDragStop")}
-        disabled={!draggable}
-        handle={this.props.handle}
+        // disabled={!draggable}
+        // handle={this.props.handle}
         offsetParent={offsetParent}
-        cancel={
-          ".react-resizable-handle" +
-          (this.props.cancel ? "," + this.props.cancel : "")
-        }
+        // cancel={
+        //   ".react-resizable-handle" +
+        //   (this.props.cancel ? "," + this.props.cancel : "")
+        // }
       >
         {child}
-      </DraggableCore>
+      </Draggable>
     );
   }
 

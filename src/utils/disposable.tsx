@@ -9,24 +9,31 @@ export interface Disposable {
 export default class DisposableComponent<P = {}, S = {}, SS = {}> extends Component<P,S,SS> {
   protected _disposables: Disposable[] = [];
 
-  protected getThisNode() {
+  constructor(p: P, s?: S) {
+    super(p, s);
+  }
+
+  protected getThisNode():Document {
     const thisNode = findDOMNode(this);
     return thisNode && thisNode.ownerDocument || document;
   }
 
-  protected addEventListener<T>(
-    event: string,
-    callback: EventListener,
+  protected addEventListener<T extends keyof DocumentEventMap>(
+    event: T,
+    callback: (ev: DocumentEventMap[T]) => void,
+    options?: AddEventListenerOptions,
+    target: HTMLElement | Document = this.getThisNode(),
   ) {
-    const target = this.getThisNode();
-    target.addEventListener(event, callback);
-
+    target.addEventListener(event, callback, options);
     const handler = () => target.removeEventListener(event, callback);
     this._disposables.push({ handler, callback });
     return callback;
   }
 
-  protected removeEventListener(event: string, callback: EventListener) {
+  protected removeEventListener<T extends keyof DocumentEventMap>(
+    event: T,
+    callback: (ev: DocumentEventMap[T]) => void,
+  ) {
     this._disposables = this._disposables.filter(i => {
       if (i.callback === callback) {
         i.handler();

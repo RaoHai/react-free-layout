@@ -1,8 +1,8 @@
 import React, { PureComponent } from 'react';
 import { OffsetParent, setTransform, getOffsetParent, classNames } from '../../utils';
-import { DraggableCore, DraggableData } from 'react-draggable';
 import { Position } from '../GridItem';
 import { LayoutItem } from '../../model/LayoutState';
+import Draggable, { DraggableData, DraggerEvent } from '../Dragger/index';
 
 export interface AxisOpt {
   key: string;
@@ -40,7 +40,7 @@ export const handles: AxisOpt[] = [
 ];
 
 export interface GridResizeEvent {
-  e: MouseEvent | React.SyntheticEvent<MouseEvent>;
+  e: DraggerEvent;
   axis?: {};
   node: DraggableData['node'];
   size?: Position;
@@ -103,7 +103,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
   }
 
   resizeHandler = (handlerName: keyof ResizeCallbacks<any>, axisOptions: AxisOpt) => {
-    return (e: MouseEvent | React.SyntheticEvent<MouseEvent>, data: DraggableData) => {
+    return (e: DraggerEvent, data: DraggableData) => {
       let { i, x, y, w, h, calcPosition, calcWH } = this.props;
       const {
         deltaX,
@@ -209,7 +209,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
       <>
         { resizing ? <div className="react-grid-layout-selection-helper" /> : null }
         <div className={cls} style={style}>
-          {handles.map(({ key, direction }) => <DraggableCore
+          {handles.map(({ key, direction }) => <Draggable
             {...draggableOpts}
             key={`resizableHandle-${key}`}
             onStop={this.resizeHandler('onResizeStop', { key, direction })}
@@ -218,7 +218,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
             offsetParent={getOffsetParent(offsetParent)}
           >
             <span className={`react-resizable-handle react-resizable-handle-${key}`} />
-          </DraggableCore>)}
+          </Draggable>)}
         </div>
       </>
     )

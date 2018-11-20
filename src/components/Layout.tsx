@@ -22,6 +22,7 @@ import { DraggableData } from 'react-draggable';
 import Selection, { MousePosition } from './Selection';
 import Resizer, { ResizeCallbacks, ResizeProps, SelectCallbacks, GridResizeCallback } from './Resizer';
 import { persist } from '../utils/events';
+import { DraggerEvent } from './Dragger/index';
 
 export const temporaryGroupId = Symbol('template');
 
@@ -68,7 +69,7 @@ export type GridDragEventCallback = (
   item?: LayoutItem | null,
   lastItem?: LayoutItem | null,
   placeholder?: LayoutItem | null,
-  e?: MouseEvent | React.SyntheticEvent<MouseEvent> ,
+  e?: DraggerEvent,
   node?: DraggableData['node'],
 ) => void;
 
@@ -77,7 +78,7 @@ export type GridResizeEventCallback = (
   item?: LayoutItem | null,
   lastItem?: LayoutItem | null,
   placeholder?: LayoutItem | null,
-  e?: MouseEvent | React.SyntheticEvent<MouseEvent> ,
+  e?: DraggerEvent,
   node?: DraggableData['node'],
 ) => void;
 

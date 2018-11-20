@@ -22,10 +22,6 @@
   "files": [
     "lib"
   ],
-  "dependencies": {
-    "lodash.isequal": "^4.5.0",
-    "react-draggable": "^3.0.5"
-  },
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
