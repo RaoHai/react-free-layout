@@ -23,11 +23,10 @@ import {
 } from '../utils/layout';
 
 import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, GridDragCallback } from './GridItem';
-import { DraggableData } from 'react-draggable';
 import Selection, { MousePosition } from './Selection';
 import Resizer, { ResizeCallbacks, ResizeProps, SelectCallbacks, GridResizeCallback } from './Resizer';
 import { persist } from '../utils/events';
-import { DraggerEvent } from './Dragger/index';
+import { DraggerEvent, DraggableData } from './Dragger/index';
 
 
 export const temporaryGroupId = Symbol('template');

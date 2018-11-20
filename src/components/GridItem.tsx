@@ -1,5 +1,4 @@
 import React, { Component, MouseEventHandler } from 'react';
-// import { DraggableData } from 'react-draggable';
 import Draggable, { DraggableData, DraggerEvent } from './Dragger';
 import { setTransform, getOffsetParent, OffsetParent, classNames } from '../utils';
 import { LayoutItem } from '../model/LayoutState';
