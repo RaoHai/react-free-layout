@@ -43,6 +43,46 @@ describe('Resizer', () => {
     expect((wrapper.instance() as Layout).onResize('a', {} as any, {} as any)).toBeUndefined();
   });
 
+  test('resize with constraints', () => {
+    const resizeStart = jest.fn();
+    const resize = jest.fn();
+    const resizeStop = jest.fn();
+
+    const wrapper = mount(<Layout
+      layout={[
+        { i: 'a', x: 0, y: 0, w: 10, h: 10, minW: 10, minH: 10, maxH: 15, maxW: 15 },
+        { i: 'b', x: 15, y: 15, w: 10, h: 10 }
+      ]}
+      width={1024}
+      grid={[10, 10]}
+      onResizeStart={resizeStart}
+      onResize={resize}
+      onResizeStop={resizeStop}
+      minConstraints={[ 5, 5 ]}
+      maxConstraints={[ 20, 20 ]}
+    >
+      <div key="a" id="handler">hello world</div>
+      <div key="b" id="anotherHandler">hello world</div>
+    </Layout>);
+
+    expect(wrapper);
+
+    const handler = wrapper.find('#handler');
+    handler.simulate('mousedown');
+
+    const resizer = wrapper.findWhere(wrapper => wrapper.key() === `resizableHandle-br`);
+    expect(resizer);
+    resizer.simulate('mousedown', { clientX: 100, clientY: 100 });
+    mouseMove(200, 200, handler);
+    mouseUp(200, 200, handler);
+
+    expect((wrapper.state() as IGridLayoutState).layoutState.layout)
+      .toEqual([
+        { i: 'a', x: 0, y: 0, w: 15, h: 15, minW: 10, minH: 10, maxH: 15, maxW: 15 },
+        { i: 'b', x: 15, y: 15, w: 10, h: 10 }
+      ]);
+  });
+
   test('resize group', () => {
     const resizeStart = jest.fn();
     const resize = jest.fn();

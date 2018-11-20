@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { OffsetParent, setTransform, getOffsetParent, classNames } from '../../utils';
+import { OffsetParent, setTransform, getOffsetParent, classNames, executeConstrains } from '../../utils';
 import { Position } from '../GridItem';
 import { LayoutItem } from '../../model/LayoutState';
 import Draggable, { DraggableData, DraggerEvent } from '../Dragger/index';
@@ -62,6 +62,8 @@ LayoutItem & {
   calcWH: (...args: any) => { w: number, h: number };
   colWidth: number;
   rowHeight: number;
+  widthConstrains: [ number, number ];
+  heightConstrains: [ number, number ];
 }
 
 export interface ResizeState {
@@ -104,7 +106,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
 
   resizeHandler = (handlerName: keyof ResizeCallbacks<any>, axisOptions: AxisOpt) => {
     return (e: DraggerEvent, data: DraggableData) => {
-      let { i, x, y, w, h, calcPosition, calcWH } = this.props;
+      let { i, x, y, w, h, calcPosition, calcWH, widthConstrains, heightConstrains } = this.props;
       const {
         deltaX,
         deltaY,
@@ -143,26 +145,26 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
 
         if (direction[0] === -1) {
           const dx = Math.round((Math.max(cX, 0) - this.state.lastX) / this.props.colWidth) * this.props.colWidth;
-          const _w = Math.max(originPosition.width - dx, 0);
+          const _w = executeConstrains(originPosition.width - dx, widthConstrains);
           const right = originPosition.left + originPosition.width;
           const _x = right - _w;
           width = _w;
           resizingX = Math.round(_x / this.props.colWidth);
           x = resizingX;
         } else {
-          width = width + direction[0] * deltaX;
+          width = executeConstrains(width + direction[0] * deltaX, widthConstrains);
         }
 
         if (direction[1] === -1) {
           const dy = Math.round((Math.max(cY, 0) - this.state.lastY) / this.props.rowHeight) * this.props.rowHeight;
-          const _h = Math.max(originPosition.height - dy, 0);
+          const _h = executeConstrains(originPosition.height - dy, heightConstrains);
           const bottom = originPosition.top + originPosition.height;
           const _y = bottom - _h;
           height = _h;
           resizingY = Math.round(_y / this.props.rowHeight);
           y = resizingY;
         } else {
-          height = height + direction[1] * deltaY;
+          height = executeConstrains(height + direction[1] * deltaY, heightConstrains);
         }
 
         x = Math.max(0, x);

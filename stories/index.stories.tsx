@@ -21,6 +21,14 @@ storiesOf("Basic Usage", module)
   >
     <div key="a">xxx</div>
   </Layout>)
+  .add('size Constraints', () => <Layout
+    {...dragActions}
+    width={1024}
+    grid={[8, 8]}
+    layout={[{ i: 'a', w: 12, h: 10, x: 10, y: 10, minH: 5, minW: 5, maxW: 20, maxH: 20 }]}
+  >
+    <div key="a">xxx</div>
+  </Layout>)
   .add('random layout', () => <Layout
     {...dragActions}
     style={{ margin: '0 auto' }}
@@ -30,7 +38,7 @@ storiesOf("Basic Usage", module)
   >
     {generateDOM(layout)}
   </Layout>
-);
+  );
 
 storiesOf("Group Usage", module)
   .add('random group', () => <Layout

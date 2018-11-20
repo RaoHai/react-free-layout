@@ -66,6 +66,8 @@ const defaultProps = {
   onLayoutChange: () => {},
   onContextMenu: noop,
   selectOption: 'contain' as PickOption,
+  minConstraints: [ 0, 0 ] as [ number, number ],
+  maxConstraints: [ Infinity, Infinity ] as [ number, number ],
 }
 
 
@@ -108,6 +110,8 @@ export type IGridLayoutProps = {
   children: JSX.Element[] | JSX.Element;
   isDraggable?: boolean;
   isResizable?: boolean;
+  minConstraints: [ number, number ];
+  maxConstraints: [ number, number ];
   selectOption?: PickOption;
   extraRender?: () => JSX.Element;
   onLayoutChange: (layout: Layout) => void;
@@ -723,13 +727,18 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   resizer = () => {
+    const { minConstraints: propsMinConstraints, maxConstraints: propsMaxConstraints } = this.props;
     const { colWidth, mounted } = this.state;
     const { focusItem, activeGroup } = this.state.layoutState;
     if (!focusItem || !mounted) {
       return null;
     }
 
-    const { i, x, y, w, h } = focusItem;
+    const { i,
+      x, y, w, h,
+      minW = -Infinity, minH = -Infinity,
+      maxW = Infinity, maxH = Infinity,
+    } = focusItem;
 
     const resizingGroup = activeGroup && activeGroup.id === focusItem.i;
     const resizeCallbacks = resizingGroup ? {
@@ -742,12 +751,24 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onResizeStop: this.onResizeStop,
     };
 
+    const widthConstrains: [ number, number ] = [
+      Math.max(propsMinConstraints[0], minW) * colWidth,
+      Math.min(propsMaxConstraints[0], maxW) * colWidth,
+    ];
+
+    const heightConstrains: [ number, number ] = [
+      Math.max(propsMinConstraints[1], minH) * colWidth,
+      Math.min(propsMaxConstraints[1], maxH) * colWidth,
+    ]
+
     return <Resizer
       i={i}
       x={x}
       y={y}
       w={w}
       h={h}
+      widthConstrains={widthConstrains}
+      heightConstrains={heightConstrains}
       {...resizeCallbacks}
       className={resizingGroup ? 'group-resizer' : 'item-resizer'}
       offsetParent={this.getOffsetParent}
