@@ -2,15 +2,20 @@ import { Component } from 'react';
 import { findDOMNode } from 'react-dom';
 
 export interface Disposable {
-  handler: Function;
+  handler: () => any;
   callback: EventListener;
 }
 
 export default class DisposableComponent<P = {}, S = {}, SS = {}> extends Component<P,S,SS> {
-  protected _disposables: Disposable[] = [];
+  protected disposables: Disposable[] = [];
 
   constructor(p: P, s?: S) {
     super(p, s);
+  }
+
+  componentWillUnmount() {
+    this.disposables.forEach(i => i.handler());
+    this.disposables.length = 0;
   }
 
   protected getThisNode():Document {
@@ -26,7 +31,7 @@ export default class DisposableComponent<P = {}, S = {}, SS = {}> extends Compon
   ) {
     target.addEventListener(event, callback, options);
     const handler = () => target.removeEventListener(event, callback);
-    this._disposables.push({ handler, callback });
+    this.disposables.push({ handler, callback });
     return callback;
   }
 
@@ -34,18 +39,13 @@ export default class DisposableComponent<P = {}, S = {}, SS = {}> extends Compon
     event: T,
     callback: (ev: DocumentEventMap[T]) => void,
   ) {
-    this._disposables = this._disposables.filter(i => {
+    this.disposables = this.disposables.filter(i => {
       if (i.callback === callback) {
         i.handler();
         return true;
       }
       return false;
     });
-  }
-
-  componentWillUnmount() {
-    this._disposables.forEach(i => i.handler());
-    this._disposables.length = 0;
   }
 
 }

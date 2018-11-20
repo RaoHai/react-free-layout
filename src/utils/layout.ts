@@ -93,9 +93,9 @@ export function moveElement(
 }
 
 
-export function groupLayout(_layout: Layout, id: string): Group {
+export function groupLayout(originLayout: Layout, id: string): Group {
   const level: number[] = [];
-  const layout = _layout.map(i => {
+  const layout = originLayout.map(i => {
     if (i.z && !isNaN(i.z) && i.z !== defaultLevel) {
       level.push(i.z);
     }
@@ -158,12 +158,10 @@ export function hoistSelectionByParent(
   , []).concat(singleItems) : layout;
 }
 
-export type ExtraValue = Object | Function;
-
 export function updateLayout(
   layout: Layout,
   newLayout: Layout,
-  extraValue: ExtraValue = {},
+  extraValue: any,
   iter: (...args: any[]) => LayoutItem = (...args: any[]) => Object.assign({}, ...args),
 ) {
   if (!newLayout || !newLayout.length) {
@@ -193,15 +191,19 @@ export function mergeLayout(
 }
 
 export function getBoundingRectFromLayout(layout: Layout): GridRect {
-  let x: number = Infinity, y: number = Infinity, right: number = -Infinity, bottom: number = -Infinity;
+  let x: number = Infinity;
+  let y: number = Infinity;
+  let right: number = -Infinity;
+  let btom: number = -Infinity;
+
   layout.forEach(i => {
     x = Math.min(i.x, x);
     y = Math.min(i.y, y);
     right = Math.max(i.x + i.w, right);
-    bottom = Math.max(i.y + i.h, bottom);
+    btom = Math.max(i.y + i.h, btom);
   });
 
-  return { x, y, right, bottom }
+  return { x, y, right, bottom: btom }
 }
 
 /**

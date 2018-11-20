@@ -5,13 +5,15 @@
     "object-literal-sort-keys": false,
     "ordered-imports": false,
     "no-console": false,
-    "interface-name": false
+    "interface-name": false,
+    "prefer-for-of": false
   },
   "linterOptions": {
     "exclude": [
       "config/**/*.js",
       "node_modules/**/*.ts",
-      "coverage/lcov-report/*.js"
+      "coverage/lcov-report/*.js",
+      "**/__tests/*.{ts,tsx}"
     ]
   }
 }

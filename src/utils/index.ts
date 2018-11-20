@@ -12,7 +12,7 @@ export interface Position {
 export function noop() { return; }
 export type OffsetParent = HTMLElement | Document | (() => HTMLElement | null);
 
-export function isEqual<T extends Object>(value: T | undefined, other: T | undefined) {
+export function isEqual<T extends {}>(value: T | undefined, other: T | undefined) {
   if (value === other) {
     return true;
   }
@@ -43,11 +43,9 @@ export function isEqual<T extends Object>(value: T | undefined, other: T | undef
   return true;
 }
 
-export function classNames(...args: (string | {} | undefined)[]): string {
+export function classNames(...args: Array<string | {} | undefined>): string {
   const cls: string[] = [];
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-
+  for (const arg of args) {
     if (typeof arg === 'string') {
       cls.push(arg);
     } else if (Array.isArray(arg)) {
@@ -137,10 +135,10 @@ export function getOffsetParent(offsetParent?: OffsetParent): HTMLElement {
 
 export function offsetXYFromParent(
   evt: { clientX: number, clientY: number },
-  _offsetParent?: OffsetParent,
+  accesor?: OffsetParent,
 ) {
 
-  const offsetParent = getOffsetParent(_offsetParent);
+  const offsetParent = getOffsetParent(accesor);
   const isBody = offsetParent === (offsetParent.ownerDocument && offsetParent.ownerDocument.body);
   const offsetParentRect = isBody ? {left: 0, top: 0} : offsetParent.getBoundingClientRect();
 

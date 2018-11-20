@@ -68,12 +68,7 @@ export const defaultLevel = -Infinity;
 export const TOP = 999;
 
 export default class LayoutState {
-  private levelMap: LevelMap = [];
-
-  private _synchronized = false;
-
   public bottom: number = 0;
-
   public focusItem?: LayoutItem;
   public placeholder?: LayoutItem;
   public oldDragItem?: LayoutItem;
@@ -81,6 +76,9 @@ export default class LayoutState {
   public activeGroup?: Group;
   public oldActiveGroup?: Group;
   public dragging = false;
+
+  private levelMap: LevelMap = [];
+  private synchronized = false;
 
   constructor(public layout: LayoutItem[], public groups: Groups, public cols: number) {}
 
@@ -145,26 +143,27 @@ export default class LayoutState {
     });
 
     for (const key in groups) {
-      const group: Group = groups[key];
-      const level = group.level.length ? Math.min(...group.level) : defaultLevel;
-      if (!levelMap[level]) {
-        levelMap[level] = { items: [], groups: [], };
+      if (groups.hasOwnProperty(key)) {
+        const group: Group = groups[key];
+        const level = group.level.length ? Math.min(...group.level) : defaultLevel;
+        if (!levelMap[level]) {
+          levelMap[level] = { items: [], groups: [], };
+        }
+        levelMap[level].groups.push(groups[key]);
       }
-      levelMap[level].groups.push(groups[key]);
-      levelMap[level].items
     }
 
     this.focusItem = focusItemVisited ? focusItem : undefined;
     this.bottom = bottom(layout);
     this.levelMap = levelMap;
 
-    this._synchronized = true;
+    this.synchronized = true;
     return this;
   }
 
   getChildren(): LayoutChildren[] {
-    const { levelMap, _synchronized} = this;
-    if (!_synchronized) {
+    const { levelMap, synchronized } = this;
+    if (!synchronized) {
       throw new Error('Cannot get children before synchronized')
     }
 
@@ -231,7 +230,7 @@ export default class LayoutState {
       };
 
       this.layout = mergeLayout(this.layout, moved);
-      const rect = getBoundingRectFromLayout(this.layout.filter(i => i.parent && i.parent === focusItem.i));
+      const rect = getBoundingRectFromLayout(this.layout.filter(t => t.parent && t.parent === focusItem.i));
       this.focusItem = {
         ...focusItem,
         x: rect.x,

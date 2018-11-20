@@ -63,7 +63,7 @@ const defaultProps = {
   onLayoutSelect: noop,
   isDraggable: true,
   isResizable: true,
-  onLayoutChange: () => {},
+  onLayoutChange: noop,
   onContextMenu: noop,
   selectOption: 'contain' as PickOption,
   minConstraints: [ 0, 0 ] as [ number, number ],
@@ -205,7 +205,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     const movedLayoutState = layoutState
       .moveElement(i,
         { x, y, dx, dy },
-        Boolean(activeGroup && stateFocusItem && activeGroup.id == stateFocusItem.i),
+        Boolean(activeGroup && stateFocusItem && activeGroup.id === stateFocusItem.i),
       )
       .drag();
     const { layout, placeholder } = movedLayoutState;
@@ -264,7 +264,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     const { layoutState } = this.state;
     const activeGroup = layoutState.getGroup(i);
     const rect = getBoundingRectFromLayout(
-      layoutState.layout.filter(i => i.parent && i.parent === activeGroup.id)
+      layoutState.layout.filter(layoutItem => layoutItem.parent && layoutItem.parent === activeGroup.id)
     );
 
     const focusItem = {
@@ -467,9 +467,9 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         i: temporaryGroupId,
       }, temporaryGroup),
     }, () => {
-      const { layoutState } = this.state;
+      const { layoutState: { layout, getGroup } } = this.state;
       this.props.onLayoutChange(
-        mergeLayout(layoutState.layout, hoistedLayout, i => {
+        mergeLayout(layout, hoistedLayout, i => {
           return {
             ...i,
             _parent: i.parent,
@@ -477,7 +477,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
           }
         })
       );
-      this.props.onLayoutSelect(hoistedLayout, layoutState.getGroup[temporaryGroupId]);
+      this.props.onLayoutSelect(hoistedLayout, getGroup[temporaryGroupId]);
     })
   }
 
@@ -572,7 +572,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       colWidth={colWidth}
       rowHeight={colWidth}
       offsetParent={this.getOffsetParent}
-      onContextMenu={(e: React.MouseEvent) => this.onContextMenu(activeDrag, e)}
+      onContextMenu={this.onContextMenu.bind(this, activeDrag)}
       {...events}
     >
       {children}
@@ -600,7 +600,9 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         const { layout } = group;
 
         const strechedLayout = stretchLayout(layout, { x, y, right: x + w, bottom: y + h });
-        const rect = getBoundingRectFromLayout(strechedLayout.filter(i => i.parent && i.parent === focusItem.i));
+        const rect = getBoundingRectFromLayout(strechedLayout
+          .filter(item => item.parent && item.parent === focusItem.i),
+        );
         const updatedFocusItem = {
           ...focusItem,
           x: rect.x,

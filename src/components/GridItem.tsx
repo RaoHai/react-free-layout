@@ -46,11 +46,6 @@ export interface GridDragCallbacks<T> {
   onDragStop: T;
 }
 
-export type Axis = {
-  key: string;
-  direction: (0 | -1 | 1)[];
-}
-
 export type GridItemProps = GridDragCallbacks<GridDragCallback> &
   LayoutItem &
   {
