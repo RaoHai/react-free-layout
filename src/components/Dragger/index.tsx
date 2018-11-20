@@ -63,6 +63,41 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
     };
   }
 
+  handleDragStop = (e: DraggerEvent) => {
+    const { dragging, touchIdentifier } = this.state;
+    if (!dragging) {
+      return;
+    }
+
+    const position = getControlPosition(e as any, touchIdentifier, this);
+
+    const draggingData = createCoreData(this, position.x, position.y);
+
+    this.setState({
+      dragging: false,
+      touchIdentifier: NaN,
+      lastX: NaN,
+      lastY: NaN
+    }, () => {
+      if (this.props.onStop) {
+        persist(e);
+        this.props.onStop(e, draggingData);
+      }
+    });
+
+    this.removeEventListener('mousemove', this.handleDrag);
+    this.removeEventListener('touchmove', this.handleDragStop);
+  }
+
+  render() {
+    const child = React.Children.only(this.props.children);
+    return React.cloneElement(child, {
+      onMouseDown: this.handleTopDragStart,
+      onTouchStart: this.handleTopDragStart,
+    });
+  }
+
+
   private handleTopDragStart = (e: DraggerEvent) => {
     const touchIdentifier = getTouchIdentifier(e as any);
     const position = getControlPosition(e as any, touchIdentifier, this);
@@ -108,40 +143,6 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
           this.handleDragStop(new TouchEvent('touchend'));
         }
       }
-    });
-  }
-
-  handleDragStop = (e: DraggerEvent) => {
-    const { dragging, touchIdentifier } = this.state;
-    if (!dragging) {
-      return;
-    }
-
-    const position = getControlPosition(e as any, touchIdentifier, this);
-
-    const draggingData = createCoreData(this, position.x, position.y);
-
-    this.setState({
-      dragging: false,
-      touchIdentifier: NaN,
-      lastX: NaN,
-      lastY: NaN
-    }, () => {
-      if (this.props.onStop) {
-        persist(e);
-        this.props.onStop(e, draggingData);
-      }
-    });
-
-    this.removeEventListener('mousemove', this.handleDrag);
-    this.removeEventListener('touchmove', this.handleDragStop);
-  }
-
-  render() {
-    const child = React.Children.only(this.props.children);
-    return React.cloneElement(child, {
-      onMouseDown: this.handleTopDragStart,
-      onTouchStart: this.handleTopDragStart,
     });
   }
 }
