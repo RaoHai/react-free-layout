@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import DisposableComponent from '../../utils/disposable';
 import { persist } from '../../utils/events';
-import { getControlPosition, getTouchIdentifier, OffsetParent } from '../../utils/index';
+import { getControlPosition, getTouchIdentifier, OffsetParent } from '../../utils';
 
 export interface DraggableState {
   lastX: number;

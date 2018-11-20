@@ -1,7 +1,7 @@
 import React from 'react';
 import { mount } from 'enzyme';
 import GridItem from '../GridItem';
-import { noop } from '../../utils/index';
+import { noop } from '../../utils';
 import { mouseMove, mouseUp } from '../../../test/testUtils';
 
 

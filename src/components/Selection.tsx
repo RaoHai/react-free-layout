@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { getTouchIdentifier, getControlPosition, noop, OffsetParent, getOffsetParent, setTransform, Position } from '../utils/index';
+import { getTouchIdentifier, getControlPosition, noop, OffsetParent, getOffsetParent, setTransform, Position } from '../utils';
 import DisposableComponent from '../utils/disposable';
 
 export type TouchEvent = React.SyntheticEvent<React.TouchEvent> | Event;
