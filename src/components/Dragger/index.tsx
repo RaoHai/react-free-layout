@@ -67,10 +67,6 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
     const touchIdentifier = getTouchIdentifier(e as any);
     const position = getControlPosition(e as any, touchIdentifier, this);
 
-    if (!position) {
-      return;
-    }
-
     const draggingData = createCoreData(this, position.x, position.y);
 
     this.setState({
@@ -85,13 +81,13 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
       }
     });
 
-    this.addEventListener('mousemove', this.handleTopDragOver, undefined, document);
-    this.addEventListener('touchmove', this.handleTopDragOver, undefined, document);
-    this.addEventListener('mouseup', this.handleTopDragStop, undefined, document);
-    this.addEventListener('touchend', this.handleTopDragStop, undefined, document);
+    this.addEventListener('mousemove', this.handleDrag, undefined, document);
+    this.addEventListener('touchmove', this.handleDrag, undefined, document);
+    this.addEventListener('mouseup', this.handleDragStop, undefined, document);
+    this.addEventListener('touchend', this.handleDragStop, undefined, document);
   }
 
-  private handleTopDragOver = (e: DraggerEvent) => {
+  private handleDrag = (e: DraggerEvent) => {
 
     const { dragging, touchIdentifier } = this.state;
     if (!dragging) {
@@ -99,11 +95,6 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
     }
 
     const position = getControlPosition(e as any, touchIdentifier, this);
-
-    if (!position) {
-      return;
-    }
-
     const draggingData = createCoreData(this, position.x, position.y);
 
     this.setState({
@@ -112,24 +103,21 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
     }, () => {
       if (this.props.onDrag) {
         persist(e);
-        this.props.onDrag(e, draggingData);
-        // if (dragReturn === false) {
-        //   this.handleDragStop(new DragEvent('dragend'));
-        // }
+        const dragReturn = this.props.onDrag(e, draggingData);
+        if (dragReturn === false) {
+          this.handleDragStop(new TouchEvent('touchend'));
+        }
       }
     });
   }
 
-  handleTopDragStop = (e: DraggerEvent) => {
+  handleDragStop = (e: DraggerEvent) => {
     const { dragging, touchIdentifier } = this.state;
     if (!dragging) {
       return;
     }
 
     const position = getControlPosition(e as any, touchIdentifier, this);
-    if (!position) {
-      return;
-    }
 
     const draggingData = createCoreData(this, position.x, position.y);
 
@@ -145,8 +133,8 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
       }
     });
 
-    this.removeEventListener('mousemove', this.handleTopDragOver);
-    this.removeEventListener('touchmove', this.handleTopDragStop);
+    this.removeEventListener('mousemove', this.handleDrag);
+    this.removeEventListener('touchmove', this.handleDragStop);
   }
 
   render() {

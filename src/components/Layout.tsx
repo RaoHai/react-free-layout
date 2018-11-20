@@ -19,9 +19,10 @@ import {
   mergeLayout,
   pickByRect,
   stretchLayout,
+  PickOption,
 } from '../utils/layout';
 
-import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, Axis, GridDragCallback } from './GridItem';
+import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, GridDragCallback } from './GridItem';
 import { DraggableData } from 'react-draggable';
 import Selection, { MousePosition } from './Selection';
 import Resizer, { ResizeCallbacks, ResizeProps, SelectCallbacks, GridResizeCallback } from './Resizer';
@@ -65,6 +66,7 @@ const defaultProps = {
   isResizable: true,
   onLayoutChange: () => {},
   onContextMenu: noop,
+  selectOption: 'contain' as PickOption,
 }
 
 
@@ -107,6 +109,7 @@ export type IGridLayoutProps = {
   children: JSX.Element[] | JSX.Element;
   isDraggable?: boolean;
   isResizable?: boolean;
+  selectOption?: PickOption;
   extraRender?: () => JSX.Element;
   onLayoutChange: (layout: Layout) => void;
   onContextMenu?: (currentItem: LayoutItem, focusItem: LayoutItem | null | undefined, ev: ReactMouseEvent) => void;
@@ -151,15 +154,11 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
   onDragStart = (i: string, x: number, y: number, ev: GridDragEvent) => {
     const { layoutState } = this.state;
-    const l = layoutState.getLayoutItem(i);
+    const l = layoutState.getLayoutItem(i) as LayoutItem;
     const {
       activeGroup: stateActiveGroup,
       focusItem: stateFocusItem,
     } = layoutState
-
-    if (!l) {
-      return;
-    }
 
     // 在当前节点有容器的情况下。
     // 以下几种情况开启群组移动
@@ -196,8 +195,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       activeGroup,
     } = this.state.layoutState;
     const l = layoutState.getLayoutItem(i);
-
-    if (!l || !stateFocusItem) {
+    if (!stateFocusItem) {
       return;
     }
 
@@ -237,7 +235,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     const l = layoutState.getLayoutItem(i);
 
-    if (!l || !focusItem) {
+    if (!focusItem) {
       return;
     }
 
@@ -262,10 +260,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   onDragContainerStart = (i: string | symbol, { e, node }: GridDragEvent) => {
     const { layoutState } = this.state;
     const activeGroup = layoutState.getGroup(i);
-    if (!activeGroup) {
-      return {};
-    }
-
     const rect = getBoundingRectFromLayout(
       layoutState.layout.filter(i => i.parent && i.parent === activeGroup.id)
     );
@@ -288,16 +282,13 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   onResizeStart = (i: string | symbol, { x, y, w, h }: ResizeProps, { e, node }: GridResizeEvent) => {
     const { layoutState } = this.state;
     const l = layoutState.getLayoutItem(i);
-    if (!l) {
-      return;
-    }
 
     this.setState({ oldResizeItem: cloneLayoutItem(l)});
 
     this.props.onResizeStart(layoutState.layout, l, l, null, e, node);
   }
 
-  onResize = (i: string | symbol, { w, h, x, y }: ResizeProps, { e, node }: GridResizeEvent, axis: Axis) => {
+  onResize = (i: string | symbol, { w, h, x, y }: ResizeProps, { e, node }: GridResizeEvent) => {
     const { layoutState } = this.state;
     if (!layoutState.focusItem) {
       return;
@@ -412,6 +403,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     const selectedLayout = pickByRect(
       layoutState.layout,
       getRectFromPoints(start, end, colWidth),
+      this.props.selectOption,
     );
 
     this.setState({ selectedLayout });

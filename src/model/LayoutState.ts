@@ -139,8 +139,7 @@ export default class LayoutState {
       }
 
       const item = layout[index];
-
-      if (focusItem && item.i === focusItem.i) {
+      if (focusItem && item && item.i === focusItem.i) {
         focusItemVisited = true;
       }
     });
@@ -274,8 +273,8 @@ export default class LayoutState {
     return this.layout;
   }
 
-  getLayoutItem(i: LayoutItem['i']) {
-    return this.layout.find(item => item.i === i);
+  getLayoutItem(i: LayoutItem['i']): LayoutItem {
+    return this.layout.find(item => item.i === i) as LayoutItem;
   }
 
   getGroup(id: Group['id']): Group {

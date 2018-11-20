@@ -24,6 +24,43 @@ describe('single layout', () => {
     expect(wrapper.instance()).toBeNull();
   });
 
+  test('select and move layout item', () => {
+    const wrapper = mount(<Layout
+      layout={[
+        { i: 'a', x: 0, y: 0, w: 10, h: 10 },
+        { i: 'b', x: 15, y: 0, w: 10, h: 10, static: true },
+      ]}
+      width={1024}
+      grid={[10, 10]}
+    >
+      <div key="a" id="a">hello world</div>
+      <div key="b" id="b">hello world</div>
+    </Layout>);
+
+    expect(wrapper);
+
+    wrapper.find('#a').simulate('mousedown', { clientX: 1, clientY: 1 });
+
+    expect(wrapper.find('#a').simulate('contextmenu'));
+
+    mouseMove(200, 200);
+    mouseUp(200, 200);
+    expect((wrapper.state() as IGridLayoutState).layoutState.layout)
+      .toEqual([
+        { i: 'a', x: 20, y: 20, w: 10, h: 10, moved: true },
+        { i: 'b', x: 15, y: 0, w: 10, h: 10, static: true },
+      ]);
+
+    wrapper.find('#b').simulate('mousedown', { clientX: 151, clientY: 1 });
+    mouseMove(300, 200);
+    mouseUp(300, 200);
+
+    expect((wrapper.state() as IGridLayoutState).layoutState.layout)
+      .toEqual([
+        { i: 'a', x: 20, y: 20, w: 10, h: 10, moved: true },
+        { i: 'b', x: 15, y: 0, w: 10, h: 10, static: true },
+      ]);
+  });
 
   test('layout with children props node', () => {
     const fn = jest.fn();
@@ -151,21 +188,9 @@ describe('Layout Exceptions', () => {
 
     const wrapper = mount(<App />);
     expect(wrapper);
-
     done();
-
-    // await (wrapper.instance() as any).componentDidMount();
-
-    // setImmediate(() => {
-    //   const updatedWrapper = wrapper.update();
-    //   const b = updatedWrapper.find('#b');
-
-    //   b.simulate('mousedown');
-    //   wrapper.unmount();
-    //   done();
-    // });
-
   });
+
 });
 
 describe('Events', () => {

@@ -63,6 +63,35 @@ describe('GridItem', () => {
     const errorFn = jest.fn();
     window.addEventListener('error', errorFn);
     mouseMove(200, 200);
+
+    expect(errorFn).toHaveBeenCalledTimes(2);
+  });
+
+  test('GridItem without handler', () => {
+    const wrapper = mount(<GridItem
+      i="a"
+      x={0}
+      y={0}
+      w={12}
+      h={8}
+      onDragStart={null as any}
+      onDragStop={() => {}}
+      onDrag={() => {}}
+      cols={24}
+      maxRows={Infinity}
+      containerWidth={1024}
+      colWidth={10}
+      rowHeight={10}
+      containerPadding={[0, 0]}
+    >
+      <div id="a">a</div>
+    </GridItem>);
+
+    const handler = wrapper.find('#a');
+    handler.simulate('mousedown');
+
+    const errorFn = jest.fn();
+    window.addEventListener('error', errorFn);
     mouseUp(200, 200);
 
     expect(errorFn).toHaveBeenCalledTimes(2);

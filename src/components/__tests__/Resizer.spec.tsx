@@ -1,6 +1,6 @@
 import React from 'react';
 import { mount } from 'enzyme';
-import Layout from '../Layout';
+import Layout, { IGridLayoutState } from '../Layout';
 import { handles } from '../Resizer/index';
 import { mouseMove, mouseUp } from '../../../test/testUtils';
 
@@ -37,6 +37,10 @@ describe('Resizer', () => {
     expect(resizeStart).toHaveBeenCalledTimes(handles.length);
     expect(resize).toHaveBeenCalledTimes(handles.length);
     expect(resizeStop).toHaveBeenCalledTimes(handles.length);
+
+    wrapper.simulate('mousedown', { clientX: 10, clientY: 10 });
+    expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toBeFalsy();
+    expect((wrapper.instance() as Layout).onResize('a', {} as any, {} as any)).toBeUndefined();
   });
 
   test('resize group', () => {

@@ -117,10 +117,11 @@ export function splitGroup(layout: Layout): Layout {
   return layout.map(i => ({ ...i, parent: undefined }));
 }
 
+export type PickOption = 'include' | 'contain';
 export function pickByRect(
   layout: Layout,
   rect: GridRect,
-  pickOption: 'include' | 'contain' = 'contain',
+  pickOption: PickOption = 'contain',
 ) {
   return layout.filter(item => {
     if (pickOption === 'include') {
@@ -157,23 +158,30 @@ export function hoistSelectionByParent(
   , []).concat(singleItems) : layout;
 }
 
+export type ExtraValue = Object | Function;
+
 export function updateLayout(
   layout: Layout,
   newLayout: Layout,
-  extraValue?: (i: LayoutItem) => LayoutItem | {},
+  extraValue: ExtraValue = {},
   iter: (...args: any[]) => LayoutItem = (...args: any[]) => Object.assign({}, ...args),
 ) {
   if (!newLayout || !newLayout.length) {
     return layout;
   }
 
-  return layout.map(item => {
-    const found = newLayout.find(n => n.i === item.i);
-    if (found) {
-      return iter(item, found, typeof extraValue === 'function' ? extraValue(found) : extraValue);
+  for (let i = 0; i < newLayout.length; i++) {
+    const item = newLayout[i];
+    const foundIndex = layout.findIndex(t => t.i === item.i);
+    if (foundIndex !== -1) {
+      const found = layout[foundIndex];
+      layout[foundIndex] = iter(found, item, typeof extraValue === 'function' ? extraValue(item) : extraValue);
+    } else {
+      layout.push(item);
     }
-    return item;
-  });
+  }
+
+  return layout;
 }
 
 export function mergeLayout(
@@ -196,19 +204,6 @@ export function getBoundingRectFromLayout(layout: Layout): GridRect {
   return { x, y, right, bottom }
 }
 
-export function mergeTemporaryGroup(
-  newGroup: Groups,
-  stateGroup: Groups,
-) {
-
-  if (!stateGroup || !stateGroup[temporaryGroupId]) {
-    return newGroup;
-  }
-
-  newGroup[temporaryGroupId] = stateGroup[temporaryGroupId]
-  return newGroup;
-}
-
 /**
  * 按指定 Rect 调整布局
  * * 注意
@@ -223,9 +218,6 @@ export function mergeTemporaryGroup(
  * @param restrict 限定的 Rect
  */
 export function stretchLayout(layout: LayoutItem[], restrict: GridRect): LayoutItem[] {
-  if (!layout.length) {
-    return layout;
-  }
 
   const originRect = getBoundingRectFromLayout(layout);
   const w = originRect.right - originRect.x;

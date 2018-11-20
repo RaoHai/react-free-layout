@@ -1,5 +1,5 @@
-import { isEqual } from '../index';
-import { percentile, getCols, layoutlize, bringForward, bringBack, bringTop, bringBottom, layoutEqual, bottom } from '../layout';
+import { isEqual, classNames } from '../index';
+import { percentile, getCols, layoutlize, bringForward, bringBack, bringTop, bringBottom, layoutEqual, bottom, updateLayout } from '../layout';
 
 describe('utils functions', () => {
   test('isEquals', () => {
@@ -40,7 +40,9 @@ describe('utils functions', () => {
     ])).toBeFalsy();
   });
 
-
+  test('classnames', () => {
+    expect(classNames(['foo', 'bar'])).toEqual('foo bar');
+  })
 
   test('utils percentile', () => {
     const width = 1024;
@@ -109,6 +111,16 @@ describe('utils functions', () => {
     expect(bringBack(item).z).toEqual(1);
     expect(bringTop(item, 5).z).toEqual(6);
     expect(bringBottom(item).z).toEqual(1);
-
   });
+
+  test('updateLayout', () => {
+    expect(updateLayout([], [{ i: 'a', w: 10, h: 10, x: 10, y: 10 }]))
+      .toEqual([{ i: 'a', w: 10, h: 10, x: 10, y: 10 }]);
+
+    expect(updateLayout([{ i: 'a', w: 10, h: 10, x: 10, y: 10 }], []))
+      .toEqual([{ i: 'a', w: 10, h: 10, x: 10, y: 10 }]);
+
+    expect(updateLayout([{ i: 'a', w: 10, h: 10, x: 10, y: 10 }], [{ i: 'a', w: 10, h: 11, x: 10, y: 10 }]))
+      .toEqual([{ i: 'a', w: 10, h: 11, x: 10, y: 10 }]);
+  })
 });

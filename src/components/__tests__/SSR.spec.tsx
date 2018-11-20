@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import Layout from '../Layout';
 
-describe.only('SSR', () => {
+describe('SSR', () => {
   test('simple layout', () => {
     const dom = ReactDOMServer.renderToString(<Layout
       layout={[

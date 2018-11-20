@@ -10,7 +10,7 @@ export interface Position {
 };
 
 export function noop() { return; }
-export type OffsetParent = HTMLElement | (() => HTMLElement | null);
+export type OffsetParent = HTMLElement | Document | (() => HTMLElement | null);
 
 export function isEqual<T extends Object>(value: T | undefined, other: T | undefined) {
   if (value === other) {
@@ -110,6 +110,10 @@ export function getTouch(e: TouchEvent, identifier: number): { clientX: number, 
          (e.changedTouches && findInArray(e.changedTouches, t => identifier === t.identifier));
 }
 
+function getOwnerDocument(ele?: HTMLElement | Document) {
+  return ele && ele.ownerDocument && ele.ownerDocument.body || document.body
+}
+
 export function getControlPosition<T extends React.Component<{ offsetParent?: OffsetParent }>>(
   e: TouchEvent,
   identifier: number,
@@ -117,21 +121,24 @@ export function getControlPosition<T extends React.Component<{ offsetParent?: Of
 ) {
   const touchObj = typeof identifier === 'number' ? getTouch(e, identifier) : null;
   const node = ReactDOM.findDOMNode(t) as HTMLElement;
-  if (!node) {
-    return;
-  }
 
-  return offsetXYFromParent(touchObj || e as any, t.props.offsetParent);
+  return offsetXYFromParent(
+    touchObj || e as any,
+    t.props.offsetParent || getOwnerDocument(node),
+  );
 }
 
 export function getOffsetParent(offsetParent?: OffsetParent): HTMLElement {
   if (typeof offsetParent === 'function') {
     return offsetParent() || document.body;
   }
-  return offsetParent && offsetParent.ownerDocument && offsetParent.ownerDocument.body || document.body;
+  return getOwnerDocument(offsetParent);
 }
 
-export function offsetXYFromParent(evt: { clientX: number, clientY: number }, _offsetParent?: OffsetParent) {
+export function offsetXYFromParent(
+  evt: { clientX: number, clientY: number },
+  _offsetParent?: OffsetParent,
+) {
 
   const offsetParent = getOffsetParent(_offsetParent);
   const isBody = offsetParent === (offsetParent.ownerDocument && offsetParent.ownerDocument.body);
