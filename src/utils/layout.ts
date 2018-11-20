@@ -161,7 +161,7 @@ export function hoistSelectionByParent(
 export function updateLayout(
   layout: Layout,
   newLayout: Layout,
-  extraValue: any,
+  extraValue?: any,
   iter: (...args: any[]) => LayoutItem = (...args: any[]) => Object.assign({}, ...args),
 ) {
   if (!newLayout || !newLayout.length) {
