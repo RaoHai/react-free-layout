@@ -1,7 +1,7 @@
 import ReactDOM from 'react-dom';
 import { MousePosition } from '../components/Selection';
 import { GridRect } from '../model/LayoutState';
-
+export * from './layout';
 export interface Position {
   left: number,
   top: number,
