@@ -1,6 +1,6 @@
 import React from 'react';
 import _ from 'lodash';
-import { getBoundingRectFromLayout } from '../src/utils/layout';
+import { getBoundingRectFromLayout } from '../src/utils';
 import { ReactWrapper } from 'enzyme';
 import { Group } from '../src/components/Layout';
 

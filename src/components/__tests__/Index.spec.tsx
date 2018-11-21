@@ -1,6 +1,6 @@
 import Layout, { utils } from '../../index';
 import { temporaryGroupId } from '../Layout';
-import { isTemporaryGroup } from '../../utils/layout';
+import { isTemporaryGroup } from '../../utils';
 
 describe('index', () => {
   test('should export default layout', () => {

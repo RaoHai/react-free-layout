@@ -5,7 +5,7 @@ import {
   getLayoutItem,
   mergeLayout,
   moveElement,
-} from '../utils/layout';
+} from '../utils';
 
 export interface LayoutItem {
   w: number;

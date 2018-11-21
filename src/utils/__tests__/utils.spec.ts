@@ -1,5 +1,5 @@
 import { isEqual, classNames } from '../index';
-import { percentile, getCols, layoutlize, bringForward, bringBack, bringTop, bringBottom, layoutEqual, bottom, updateLayout } from '../layout';
+import { percentile, getCols, layoutlize, bringForward, bringBack, bringTop, bringBottom, layoutEqual, bottom, updateLayout } from '../index';
 
 describe('utils functions', () => {
   test('isEquals', () => {

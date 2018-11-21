@@ -3,7 +3,7 @@ import React from 'react';
 import { mount } from 'enzyme';
 import Layout, { IGridLayoutState } from '../Layout';
 import { generateGroup, generateDOM, generateLayout, selectRange, mouseUp } from '../../../test/testUtils';
-import { groupLayout } from '../../utils/layout';
+import { groupLayout } from '../../utils';
 
 const layout = generateLayout();
 

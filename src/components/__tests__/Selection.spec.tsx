@@ -4,7 +4,7 @@ import { mouseMove, mouseUp, generateDOM, selectRange, touchMove, touchEnd } fro
 import Selection from '../Selection';
 import Layout, { temporaryGroupId, IGridLayoutState, Group } from '../Layout';
 import { LayoutItem } from '../../model/LayoutState';
-import { groupLayout, splitGroup } from '../../utils/layout';
+import { groupLayout, splitGroup } from '../../utils';
 
 describe('Selection', () => {
   test('Selection', () => {

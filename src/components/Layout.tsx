@@ -6,9 +6,6 @@ import {
   getRectFromPoints,
   noop,
   Position,
-} from '../utils';
-
-import {
   calcColWidth,
   calcPosition,
   cloneLayoutItem,
@@ -20,7 +17,7 @@ import {
   pickByRect,
   stretchLayout,
   PickOption,
-} from '../utils/layout';
+} from '../utils';
 
 import GridItem, { GridDragEvent, GridResizeEvent, GridDragCallbacks, GridDragCallback } from './GridItem';
 import Selection, { MousePosition } from './Selection';
