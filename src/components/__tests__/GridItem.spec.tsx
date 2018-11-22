@@ -58,7 +58,7 @@ describe('GridItem', () => {
     </GridItem>);
 
     const handler = wrapper.find('#a');
-    handler.simulate('mousedown');
+    handler.simulate('mousedown', { button: 0 });
 
     const errorFn = jest.fn();
     window.addEventListener('error', errorFn);
@@ -88,7 +88,7 @@ describe('GridItem', () => {
     </GridItem>);
 
     const handler = wrapper.find('#a');
-    handler.simulate('mousedown');
+    handler.simulate('mousedown', { button: 0 });
 
     const errorFn = jest.fn();
     window.addEventListener('error', errorFn);

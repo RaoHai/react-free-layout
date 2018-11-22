@@ -123,17 +123,17 @@ describe('Group', () => {
 
     expect(wrapper);
 
-    wrapper.find('#a').simulate('mousedown');
+    wrapper.find('#a').simulate('mousedown', { button: 0 });
 
     expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toEqual({ i: 'a+b', w: 25, x: 10, y: 10, h: 10,});
     wrapper.update();
 
-    wrapper.find('#a').simulate('mousedown');
+    wrapper.find('#a').simulate('mousedown', { button: 0 });
     mouseUp(0, 0);
     expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10, parent: 'a+b' });
 
     wrapper.update();
-    wrapper.find('#b').simulate('mousedown');
+    wrapper.find('#b').simulate('mousedown', { button: 0 });
     expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toEqual({ i: 'b', x: 25, y: 10, w: 10, h: 10, parent: 'a+b' });
 
     const groupEle = wrapper.findWhere(i => {
@@ -141,7 +141,7 @@ describe('Group', () => {
     });
     expect(groupEle);
 
-    groupEle.simulate('mousedown');
+    groupEle.simulate('mousedown', { button: 0 });
     expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toEqual({ i: 'a+b', w: 25, x: 10, y: 10, h: 10,});
   });
 });

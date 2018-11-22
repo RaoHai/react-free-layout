@@ -24,11 +24,11 @@ describe('Resizer', () => {
     expect(wrapper);
 
     const handler = wrapper.find('#handler');
-    handler.simulate('mousedown');
+    handler.simulate('mousedown', { button: 0 });
     handles.forEach(({ key }) => {
       const handler = wrapper.findWhere(wrapper => wrapper.key() === `resizableHandle-${key}`);
       expect(handler);
-      handler.simulate('mousedown', { clientX: 10, clientY: 10 });
+      handler.simulate('mousedown', { button: 0, clientX: 10, clientY: 10 });
       mouseMove(100, 100, handler);
 
       mouseUp(100, 100, handler);
@@ -38,7 +38,7 @@ describe('Resizer', () => {
     expect(resize).toHaveBeenCalledTimes(handles.length);
     expect(resizeStop).toHaveBeenCalledTimes(handles.length);
 
-    wrapper.simulate('mousedown', { clientX: 10, clientY: 10 });
+    wrapper.simulate('mousedown', { button: 0, clientX: 10, clientY: 10 });
     expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toBeFalsy();
     expect((wrapper.instance() as Layout).onResize('a', {} as any, {} as any)).toBeUndefined();
   });
@@ -68,11 +68,11 @@ describe('Resizer', () => {
     expect(wrapper);
 
     const handler = wrapper.find('#handler');
-    handler.simulate('mousedown');
+    handler.simulate('mousedown', { button: 0});
 
     const resizer = wrapper.findWhere(wrapper => wrapper.key() === `resizableHandle-br`);
     expect(resizer);
-    resizer.simulate('mousedown', { clientX: 100, clientY: 100 });
+    resizer.simulate('mousedown', { button: 0, clientX: 100, clientY: 100 });
     mouseMove(200, 200, handler);
     mouseUp(200, 200, handler);
 
@@ -111,12 +111,12 @@ describe('Resizer', () => {
     </Layout>);
 
     const node = wrapper.find('#a');
-    node.simulate('mousedown');
+    node.simulate('mousedown', { button: 0 });
 
     handles.forEach(({ key }) => {
       const handler = wrapper.findWhere(wrapper => wrapper.key() === `resizableHandle-${key}`);
       expect(handler);
-      handler.simulate('mousedown', { clientX: 15, clientY: 15 });
+      handler.simulate('mousedown', { button: 0, clientX: 15, clientY: 15 });
       mouseMove(115, 115, handler);
       mouseUp(115, 115, handler);
     });

@@ -39,7 +39,7 @@ describe('single layout', () => {
 
     expect(wrapper);
 
-    wrapper.find('#a').simulate('mousedown', { clientX: 1, clientY: 1 });
+    wrapper.find('#a').simulate('mousedown', { button: 0, clientX: 1, clientY: 1 });
 
     expect(wrapper.find('#a').simulate('contextmenu'));
 
@@ -51,7 +51,7 @@ describe('single layout', () => {
         { i: 'b', x: 15, y: 0, w: 10, h: 10, static: true },
       ]);
 
-    wrapper.find('#b').simulate('mousedown', { clientX: 151, clientY: 1 });
+    wrapper.find('#b').simulate('mousedown', { button: 0,clientX: 151, clientY: 1 });
     mouseMove(300, 200);
     mouseUp(300, 200);
 
@@ -140,7 +140,7 @@ describe('single layout', () => {
     expect(layout);
 
     const handler = wrapper.find('#handler').at(0);
-    handler.simulate('mousedown', { clientX: 55, clientY: 55 });
+    handler.simulate('mousedown', { button: 0, clientX: 55, clientY: 55 });
 
     expect(layout.state().oldDragItem);
     expect(layout.state().oldLayout);
@@ -209,7 +209,7 @@ describe('Events', () => {
     const handler = wrapper.find('#single');
 
     expect(handler);
-    handler.simulate('mousedown');
+    handler.simulate('mousedown', { button: 0 });
 
     expect(fn).toBeCalled();
 
@@ -241,12 +241,12 @@ describe('Events', () => {
     const handler = wrapper.find('#a');
 
     expect(handler);
-    handler.simulate('mousedown', { clientX: 101, clientY: 101 });
+    handler.simulate('mousedown', { button: 0,clientX: 101, clientY: 101 });
 
     expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toEqual({ i: 'a+b', x: 10, y: 10, w: 25, h: 10 });
 
-    handler.simulate('mousedown', { clientX: 101, clientY: 101 });
-    handler.simulate('mouseup', { clientX: 101, clientY: 101 });
+    handler.simulate('mousedown', { button: 0,clientX: 101, clientY: 101 });
+    handler.simulate('mouseup', { button: 0,clientX: 101, clientY: 101 });
 
     const state = wrapper.state() as IGridLayoutState;
     expect(state.layoutState.focusItem && state.layoutState.focusItem.i).toEqual('a+b');
@@ -296,7 +296,7 @@ describe('Events', () => {
     });
 
     expect(handler);
-    handler.simulate('mousedown', { clientX: 100, clientY: 100 });
+    handler.simulate('mousedown', { button: 0,clientX: 100, clientY: 100 });
 
     const state = wrapper.state() as IGridLayoutState;
     expect(state.layoutState.focusItem).toEqual({ i: 'a+b', x: 10, y: 10, w: 25, h: 10 });
@@ -326,7 +326,7 @@ describe('Events', () => {
     expect(wrapper);
 
     const handler = wrapper.find('#a');
-    handler.simulate('mousedown');
+    handler.simulate('mousedown', { button: 0, });
     handler.simulate('contextmenu');
 
     expect(fn).toBeCalled();
@@ -373,7 +373,7 @@ describe('Events', () => {
     const handler = wrapper.find('#a');
     expect(handler);
 
-    handler.simulate('mousedown');
+    handler.simulate('mousedown', { button: 0, });
 
     expect(layout.state().layoutState.focusItem).toEqual({ i: 'a', x: 10, y: 10, w: 10, h: 10 });
 
@@ -382,7 +382,7 @@ describe('Events', () => {
 
     (wrapper.instance() as any).reset();
 
-    wrapper.find('#b').simulate('mousedown');
+    wrapper.find('#b').simulate('mousedown', { button: 0, });
     (wrapper.instance() as any).delete();
 
     expect(layout.state().layoutState.focusItem).toEqual({ i: 'b', x: 25, y: 10, w: 10, h: 10 })

@@ -120,7 +120,7 @@ export function selectRange(
   start: { x: number, y: number },
   end: { x: number, y: number },
 ) {
-  target.simulate('mousedown', { clientX: start.x, clientY: start.y });
+  target.simulate('mousedown', { button: 0, clientX: start.x, clientY: start.y });
   mouseMove(end.x, end.y);
   mouseUp(end.x, end.y);
 }

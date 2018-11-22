@@ -24,7 +24,7 @@ describe('Selection', () => {
     expect(wrapper).not.toBeNull();
     expect(target).not.toBeNull();
 
-    target.simulate('mousedown', { clientX: 10, clientY: 10 });
+    target.simulate('mousedown', { button: 0, clientX: 10, clientY: 10 });
 
     expect((wrapper.state() as any).dragging).toEqual(true);
     expect((wrapper.state() as any).start).toEqual({ x: 10, y: 10 });
@@ -65,7 +65,7 @@ describe('Selection', () => {
 
     expect(eventTarget).not.toBeNull();
 
-    eventTarget.simulate('mousedown', { clientX: 10, clientY: 10 });
+    eventTarget.simulate('mousedown', { button: 0, clientX: 10, clientY: 10 });
 
     expect((wrapper.state() as any).selecting).toEqual(true);
 
@@ -82,7 +82,7 @@ describe('Selection', () => {
     // temporary group exists
     expect(state.layoutState.getGroup(temporaryGroupId)).not.toBeUndefined();
 
-    eventTarget.simulate('mousedown', { clientX: 0, clientY: 0 });
+    eventTarget.simulate('mousedown', { button: 0, clientX: 0, clientY: 0 });
 
     expect((wrapper.state() as any).layoutState.getGroup(temporaryGroupId)).toBeUndefined();
 
@@ -107,7 +107,7 @@ describe('Selection', () => {
 
     expect(eventTarget).not.toBeNull();
 
-    eventTarget.simulate('mousedown', { clientX: 0, clientY: 0 });
+    eventTarget.simulate('mousedown', { button: 0, clientX: 0, clientY: 0 });
 
     expect((wrapper.state() as any).selecting).toEqual(true);
 
@@ -124,7 +124,7 @@ describe('Selection', () => {
     // temporary group exists
     expect(state.layoutState.getGroup(temporaryGroupId)).not.toBeUndefined();
 
-    eventTarget.simulate('mousedown', { clientX: 0, clientY: 0 });
+    eventTarget.simulate('mousedown', { button: 0, clientX: 0, clientY: 0 });
 
     expect((wrapper.state() as any).layoutState.getGroup(temporaryGroupId)).toBeUndefined();
 
