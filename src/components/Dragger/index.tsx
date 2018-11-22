@@ -28,6 +28,7 @@ export interface DraggableProps {
   onStart: (e: DraggerEvent, data: DraggableData) => void;
   onDrag: (e: DraggerEvent, data: DraggableData) => void | false;
   onStop: (e: DraggerEvent, data: DraggableData) => void;
+  anyClick?: boolean;
 }
 
 
@@ -53,6 +54,10 @@ function createCoreData(draggable: Draggable, x: number, y: number): DraggableDa
 }
 
 export default class Draggable extends DisposableComponent<DraggableProps, DraggableState> {
+  static defaultProps = {
+    anyClick: false,
+  };
+
   constructor(p: DraggableProps) {
     super(p);
     this.state = {
@@ -98,9 +103,16 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
   }
 
 
-  private handleTopDragStart = (e: DraggerEvent) => {
+  private handleTopDragStart = (e: DraggerEvent | MouseEvent) => {
     const touchIdentifier = getTouchIdentifier(e as any);
     const position = getControlPosition(e as any, touchIdentifier, this);
+
+    if (
+      !this.props.anyClick
+      && (e as MouseEvent).button !== 0
+    ) {
+      return;
+    }
 
     const draggingData = createCoreData(this, position.x, position.y);
 
