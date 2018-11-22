@@ -111,6 +111,7 @@ export type IGridLayoutProps = {
   maxConstraints: [ number, number ];
   selectOption?: PickOption;
   extraRender?: () => JSX.Element;
+  groupElement?: JSX.Element;
   onLayoutChange: (layout: Layout) => void;
   onContextMenu?: (currentItem: LayoutItem, focusItem: LayoutItem | null | undefined, ev: ReactMouseEvent) => void;
 } & GridDragCallbacks<GridDragEventCallback>
@@ -544,7 +545,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
   createGridItem = (
     activeDrag: LayoutItem,
-    events: GridDragCallbacks<GridDragCallback>,
+    callbacks: GridDragCallbacks<GridDragCallback>,
     children: ReactChild,
     extProps?: Partial<GridItem['props']>,
   ) => {
@@ -570,7 +571,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       rowHeight={colWidth}
       offsetParent={this.getOffsetParent}
       onContextMenu={this.onContextMenu.bind(this, activeDrag)}
-      {...events}
+      {...callbacks}
     >
       {children}
     </GridItem>;
@@ -636,6 +637,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       'temporary-group': group.id === temporaryGroupId,
     });
 
+    const groupElement = this.props.groupElement ? this.props.groupElement : <div />;
     return this.createGridItem(
       {
         i: group.id,
@@ -649,7 +651,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         onDragStart: () => this.selectGroup(group, rect),
         onDragStop: noop,
       },
-      <div />,
+      groupElement,
       {
         selected,
         active,

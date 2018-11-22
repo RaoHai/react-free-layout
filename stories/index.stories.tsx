@@ -49,4 +49,23 @@ storiesOf("Group Usage", module)
     grid={[8, 8]}
   >
     {generateDOM(layout)}
-  </Layout>);
+  </Layout>)
+  .add('group render', () => {
+    const groupElement = <div
+      className="custom-group"
+      style={{
+        background: 'rgba(0, 0, 255, .15)'
+      }}
+    />;
+
+    return <Layout
+      {...dragActions}
+      layout={layout}
+      group={generateGroup(layout)}
+      width={1024}
+      grid={[ 10, 10 ]}
+      groupElement={groupElement}
+    >
+      {generateDOM(layout)}
+    </Layout>
+  });

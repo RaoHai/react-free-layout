@@ -25,6 +25,34 @@ describe('Group', () => {
     expect(state.layoutState.layout.every(i => !!i.parent));
   });
 
+  test('Custom group element', () => {
+    const group = {
+      'a+b': {
+        id: 'a+b',
+        layout: [{ i: 'a'}, { i: 'b'}]
+      },
+    };
+    const wrapper = mount(<Layout
+      layout={[
+        { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+        { i: 'b', x: 25, y: 10, w: 10, h: 10 },
+      ]}
+      group={group}
+      width={1024}
+      grid={[10, 10]}
+      groupElement={<div className="custom-group" />}
+    >
+      <div key="a" id="a">hello world</div>
+      <div key="b" id="b">hello world</div>
+    </Layout>);
+
+    expect(wrapper);
+    const state = wrapper.state() as IGridLayoutState;
+    expect(state.layoutState.groups).toEqual(group);
+    expect(state.layoutState.layout.every(i => !!i.parent));
+    expect(wrapper.find('.custom-group').length).toEqual(1);
+  });
+
   test('GroupAction: create group', () => {
     const fn = jest.fn();
     const layout = [
@@ -72,7 +100,6 @@ describe('Group', () => {
     const newState = newLayout.state() as IGridLayoutState;
     expect(newState.layoutState.groups).toEqual({ newGroup: group });
   });
-
 
   test('select group', () => {
     const group = {

@@ -208,6 +208,7 @@ export default class GridItem extends Component<GridItemProps, {
     };
 
     const child = React.Children.only(children);
+
     let newChild = React.cloneElement(child, {
       className: classNames(
         "react-grid-item",
