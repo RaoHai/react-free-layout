@@ -13,15 +13,18 @@ const dragActions = {
 };
 
 storiesOf("Basic Usage", module)
-  .add('single layout item', () => <Layout
-    {...dragActions}
-    width={1024}
-    style={{ transform: 'scale3d(0.8, 0.8, 1)'}}
-    grid={[8, 8]}
-    layout={[{ i: 'a', w: 12, h: 10, x: 10, y: 10 }]}
-  >
-    <div key="a">xxx</div>
-  </Layout>)
+  .add('single layout item', () => <>
+    <div style={{ height: 200 }} />
+    <Layout
+      {...dragActions}
+      width={1024}
+      style={{ transform: 'scale3d(0.8, 0.8, 1)'}}
+      grid={[8, 8]}
+      layout={[{ i: 'a', w: 12, h: 10, x: 10, y: 10 }]}
+    >
+      <div key="a">xxx</div>
+    </Layout>
+  </>)
   .add('size Constraints', () => <Layout
     {...dragActions}
     width={1024}

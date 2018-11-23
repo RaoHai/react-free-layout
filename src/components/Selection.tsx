@@ -59,7 +59,7 @@ export class Selection extends DisposableComponent<SelectionProps, SelectionStat
 
     const touchIdentifier = getTouchIdentifier(e as any);
     const position = getControlPosition(e as any, touchIdentifier, this);
-    const offsetPosition = offsetXYFromParent(e, this.getThisNode());
+    const offsetPosition = offsetXYFromParent(e, ReactDOM.findDOMNode(this) as HTMLElement);
     this.setState({
       dragging: true,
       touchIdentifier,
@@ -83,7 +83,7 @@ export class Selection extends DisposableComponent<SelectionProps, SelectionStat
 
     const touchIdentifier = getTouchIdentifier(e);
     const position = getControlPosition(e, touchIdentifier, this);
-    const offsetPosition = offsetXYFromParent(e, this.getThisNode());
+    const offsetPosition = offsetXYFromParent(e, ReactDOM.findDOMNode(this) as HTMLElement);
 
     this.props.onSelect(start, position);
 

@@ -5,6 +5,7 @@ import {
   getLayoutItem,
   mergeLayout,
   moveElement,
+  GridRect,
 } from '../utils';
 
 export interface LayoutItem {
@@ -32,7 +33,7 @@ export type Layout = LayoutItem[];
 
 export interface Group {
   id: string | symbol
-  rect?: DOMRect;
+  rect?: GridRect;
   layout: LayoutItem[];
   level: number[];
 }

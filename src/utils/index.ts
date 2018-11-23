@@ -3,6 +3,26 @@ import { Layout, LayoutItem, Groups, Group, defaultLevel } from '../model/Layout
 import { temporaryGroupId, IGridLayoutProps } from '../components/Layout';
 import { MousePosition } from '../components/Selection';
 import { Ref } from 'react';
+
+export const canUseDOM = () => !!(
+  typeof window !== 'undefined' &&
+  window.document &&
+  window.document.createElement
+);
+
+export class GridRect {
+  constructor(
+    public x: number,
+    public y: number,
+    public width: number,
+    public height: number,
+    public right = x + width,
+    public bottom = y + height,
+    public left = x,
+    public top = y,
+  ) {}
+}
+
 export interface Position {
   left: number,
   top: number,
@@ -121,7 +141,7 @@ export function getTouch(e: TouchEvent, identifier: number): { clientX: number, 
          (e.changedTouches && findInArray(e.changedTouches, t => identifier === t.identifier));
 }
 
-function getOwnerDocument(ele?: HTMLElement | Document) {
+export function getOwnerDocument(ele?: HTMLElement | Document) {
   return ele && ele.ownerDocument && ele.ownerDocument.body || document.body
 }
 
@@ -156,7 +176,7 @@ export function getRectFromParent(
   const x = eleRect.left + offsetParent.scrollLeft - offsetParentRect.left;
   const y = eleRect.top + offsetParent.scrollTop - offsetParentRect.top;
 
-  return new DOMRect(x, y, eleRect.width, eleRect.height);
+  return new GridRect(x, y, eleRect.width, eleRect.height);
 }
 
 export function offsetXYFromParent(
@@ -174,10 +194,10 @@ export function offsetXYFromParent(
 }
 
 
-export function getRectFromPoints(start: MousePosition, end: MousePosition, colWidth: number): DOMRect {
+export function getRectFromPoints(start: MousePosition, end: MousePosition, colWidth: number): GridRect {
   const x = Math.floor(Math.min(start.x, end.x));
   const y = Math.floor(Math.min(start.y, end.y));
-  return new DOMRect(x, y, Math.abs(start.x - end.x), Math.abs(start.y - end.y));
+  return new GridRect(x, y, Math.abs(start.x - end.x), Math.abs(start.y - end.y));
 }
 
 export function pickLayout(layout: LayoutItem[], findLayout: Array<LayoutItem['i']>) {
@@ -308,8 +328,8 @@ export function splitGroup(layout: Layout): Layout {
 export type PickOption = 'include' | 'contain';
 
 function contains(
-  originRect: DOMRect,
-  targetRect: DOMRect,
+  originRect: GridRect,
+  targetRect: GridRect,
   pickOption: PickOption,
 ): boolean {
   if (pickOption === 'include') {
@@ -327,7 +347,7 @@ function contains(
 
 export function pickByRect<T>(
   layoutRefs: { [key in symbol]: Ref<T> },
-  rect: DOMRect,
+  rect: GridRect,
   pickOption: PickOption = 'contain',
 ): Array<LayoutItem['i']> {
   const result = [];
@@ -402,7 +422,7 @@ export function mergeLayout(
   return updateLayout(layout, newLayout, extraValue, (...args: any[]) => Object.assign(args[0], ...args.slice(1)));
 }
 
-export function getBoundingRectFromLayout(layout: Layout): DOMRect {
+export function getBoundingRectFromLayout(layout: Layout): GridRect {
   let x: number = Infinity;
   let y: number = Infinity;
   let right: number = -Infinity;
@@ -415,7 +435,7 @@ export function getBoundingRectFromLayout(layout: Layout): DOMRect {
     bottom = Math.max(i.y + i.h, bottom);
   });
 
-  return new DOMRect(x, y, right - x, bottom - y);
+  return new GridRect(x, y, right - x, bottom - y);
 }
 
 /**
@@ -431,7 +451,7 @@ export function getBoundingRectFromLayout(layout: Layout): DOMRect {
  * @param layout 布局数组
  * @param restrict 限定的 Rect
  */
-export function stretchLayout(layout: LayoutItem[], restrict: DOMRect): LayoutItem[] {
+export function stretchLayout(layout: LayoutItem[], restrict: GridRect): LayoutItem[] {
 
   const originRect = getBoundingRectFromLayout(layout);
   const w = originRect.right - originRect.x;

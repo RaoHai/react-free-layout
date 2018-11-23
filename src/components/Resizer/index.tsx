@@ -224,7 +224,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
             onStart={this.resizeHandler('onResizeStart', { key, direction })}
             onDrag={this.resizeHandler('onResize', { key, direction })}
             offsetParent={getOffsetParent(offsetParent)}
-            mounted
+            mounted={true}
           >
             <span className={`react-resizable-handle react-resizable-handle-${key}`} />
           </Draggable>)}

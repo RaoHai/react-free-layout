@@ -1,13 +1,7 @@
 import React, { Component, MouseEventHandler } from 'react';
 import Draggable, { DraggableData, DraggerEvent } from './Dragger';
-import { setTransform, getOffsetParent, OffsetParent, classNames, offsetXYFromParent } from '../utils';
+import { setTransform, getOffsetParent, OffsetParent, classNames, offsetXYFromParent, canUseDOM } from '../utils';
 import { LayoutItem } from '../model/LayoutState';
-
-const canUseDOM = !!(
-  typeof window !== 'undefined' &&
-  window.document &&
-  window.document.createElement
-);
 
 export interface GridDragEvent {
   e: DraggerEvent;
@@ -85,7 +79,6 @@ export default class GridItem extends Component<GridItemProps, {
     handle: "",
     scale: 1,
     useTransform: true,
-    mounted: false,
   }
 
   constructor(props: GridItem['props']) {
@@ -97,7 +90,7 @@ export default class GridItem extends Component<GridItemProps, {
       originPosition: null,
       originLayout: null,
       resizingLayout: null,
-      mounted: !Boolean(canUseDOM),
+      mounted: !Boolean(canUseDOM()),
     };
   }
 
@@ -237,7 +230,7 @@ export default class GridItem extends Component<GridItemProps, {
       onContextMenu,
     });
 
-    newChild = canUseDOM && this.state.mounted ? this.mixinDraggable(newChild, isDraggable) : newChild;
+    newChild = canUseDOM() && this.state.mounted ? this.mixinDraggable(newChild, isDraggable) : newChild;
     return newChild;
   }
 }

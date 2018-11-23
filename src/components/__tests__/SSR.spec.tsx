@@ -3,6 +3,14 @@ import ReactDOMServer from 'react-dom/server';
 import Layout from '../Layout';
 
 describe('SSR', () => {
+  let _createElement = window.document.createElement;
+  beforeAll(() => {
+    (window.document.createElement as any) = null;
+  });
+  afterAll(() => {
+    (window.document.createElement as any) = _createElement;
+  });
+
   test('simple layout', () => {
     const dom = ReactDOMServer.renderToString(<Layout
       layout={[

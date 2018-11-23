@@ -53,7 +53,6 @@ describe('GridItem', () => {
       colWidth={10}
       rowHeight={10}
       containerPadding={[0, 0]}
-      mounted
     >
       <div id="a">a</div>
     </GridItem>);
