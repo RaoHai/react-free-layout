@@ -4,6 +4,7 @@ import { mount } from 'enzyme';
 import Layout, { IGridLayoutState } from '../Layout';
 import { generateGroup, generateDOM, generateLayout, selectRange, mouseUp } from '../../../test/testUtils';
 import { groupLayout } from '../../utils';
+import toJson from 'enzyme-to-json';
 
 const layout = generateLayout();
 
@@ -64,6 +65,7 @@ describe('Group', () => {
       width={1024}
       grid={[10, 10]}
       onLayoutSelect={fn}
+      useTransform={false}
     >
       <div key="a">a</div>
       <div key="b">b</div>
@@ -71,7 +73,7 @@ describe('Group', () => {
 
     expect(wrapper);
 
-    const eventTarget =  wrapper.find('.react-grid-layout-selection-wrapper > div').at(0);
+    const eventTarget =  wrapper.find('.react-grid-layout-selection-wrapper').at(0);
     expect(eventTarget);
     selectRange(eventTarget, { x: 0, y: 0}, { x: 300, y: 100 });
 

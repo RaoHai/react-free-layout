@@ -1,7 +1,7 @@
 import React from 'react';
 import { mount } from 'enzyme';
 import { mouseMove, mouseUp, generateDOM, selectRange, touchMove, touchEnd } from '../../../test/testUtils';
-import Selection from '../Selection';
+import { Selection } from '../Selection';
 import Layout, { temporaryGroupId, IGridLayoutState, Group } from '../Layout';
 import { LayoutItem } from '../../model/LayoutState';
 import { groupLayout, splitGroup } from '../../utils';
@@ -15,15 +15,15 @@ describe('Selection', () => {
       onSelectStart={() => {}}
       onSelect={selectfn}
       onSelectEnd={selectEndFn}
+      mounted
     >
       <div />
     </Selection>);
 
     expect(wrapper).not.toBeNull();
-    const target = wrapper.find('div').at(0);
+    const target = wrapper.find("[data-role=\"selection\"]").at(0);
 
     expect(wrapper).not.toBeNull();
-    expect(target).not.toBeNull();
 
     target.simulate('mousedown', { button: 0, clientX: 10, clientY: 10 });
 
@@ -57,6 +57,7 @@ describe('Selection', () => {
       ]}
       width={1024}
       grid={[10, 10]}
+      useTransform={false}
     >
       <div key="a" id="target">hello world</div>
       <div key="b" id="target">hello world</div>
@@ -99,6 +100,7 @@ describe('Selection', () => {
       width={1024}
       grid={[10, 10]}
       selectOption="include"
+      useTransform={false}
     >
       <div key="a" id="target">hello world</div>
       <div key="b" id="target">hello world</div>
@@ -200,6 +202,7 @@ describe('touchEvent', () => {
       onSelectStart={() => {}}
       onSelect={selectfn}
       onSelectEnd={selectEndFn}
+      mounted
     >
       <div id="handler" />
     </Selection>);

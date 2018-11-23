@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { Ref } from 'react';
 import ReactDOM from 'react-dom';
-import { getTouchIdentifier, getControlPosition, noop, OffsetParent, getOffsetParent, setTransform, Position } from '../utils';
+import { getTouchIdentifier, getControlPosition, noop, OffsetParent, getOffsetParent, setTransform, Position, offsetXYFromParent } from '../utils';
 import DisposableComponent from '../utils/disposable';
 
 export type TouchEvent = React.SyntheticEvent<React.TouchEvent> | Event;
@@ -12,7 +12,9 @@ export interface MousePosition {
 
 export interface SelectionProps {
   offsetParent?: OffsetParent;
+  forwardRef?: Ref<HTMLElement>;
   style?: {};
+  mounted?: boolean;
   onSelect: (start?: MousePosition, end?: MousePosition) => void;
   onSelectStart: () => void;
   onSelectEnd: (start?: MousePosition, end?: MousePosition) => void;
@@ -21,25 +23,28 @@ export interface SelectionProps {
 export interface SelectionState {
   dragging: boolean;
   start?: MousePosition | null;
+  startOffset?: MousePosition | null;
   end?: MousePosition | null;
+  endOffset?: MousePosition | null;
   touchIdentifier: number;
 }
 
-export default class Selection extends DisposableComponent<SelectionProps, SelectionState> {
+export class Selection extends DisposableComponent<SelectionProps, SelectionState> {
   static defaultProps = {
     onSelectStart: noop,
     onSelectEnd: noop,
     onSelect: noop,
   }
   private wrapperRef = React.createRef<HTMLDivElement>();
-  private childRef = React.createRef<React.Component<any>>();
 
   constructor(props: SelectionProps) {
     super(props);
     this.state = {
       dragging: false,
       start: null,
+      startOffset: null,
       end: null,
+      endOffset: null,
       touchIdentifier: 0,
     }
   }
@@ -47,17 +52,19 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
   startSelection: React.MouseEventHandler<HTMLElement> = e => {
     if (
       e.target !== this.wrapperRef.current &&
-      (!this.childRef.current || e.target !== ReactDOM.findDOMNode(this.childRef.current)) &&
       e.target !== getOffsetParent(this.props.offsetParent)
     ) {
       return;
     }
+
     const touchIdentifier = getTouchIdentifier(e as any);
     const position = getControlPosition(e as any, touchIdentifier, this);
+    const offsetPosition = offsetXYFromParent(e, this.getThisNode());
     this.setState({
       dragging: true,
       touchIdentifier,
       start: position,
+      startOffset: offsetPosition,
     });
 
     this.props.onSelectStart();
@@ -76,11 +83,14 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
 
     const touchIdentifier = getTouchIdentifier(e);
     const position = getControlPosition(e, touchIdentifier, this);
+    const offsetPosition = offsetXYFromParent(e, this.getThisNode());
+
     this.props.onSelect(start, position);
 
     this.setState({
       touchIdentifier,
       end: position,
+      endOffset: offsetPosition,
     });
   }
 
@@ -92,7 +102,7 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
 
     const position = getControlPosition(e, touchIdentifier, this);
     this.props.onSelectEnd(start, position);
-    this.setState({ dragging: false, start: null, end: null });
+    this.setState({ dragging: false, start: null, end: null, startOffset: null, endOffset: null });
 
     this.removeEventListener('mousemove', this.moveSelection);
     this.removeEventListener('touchmove', this.moveSelection);
@@ -101,18 +111,18 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
   }
 
   drawingHandler() {
-    const { dragging, start, end } = this.state;
-    if (!dragging || !start || !end) {
+    const { dragging, startOffset, endOffset } = this.state;
+    if (!dragging || !startOffset || !endOffset) {
       return null;
     }
 
-    return <div className="react-grid-layout-selection-helper">
+    return this.props.mounted ? <div className="react-grid-layout-selection-helper">
       <span
         key="drawing-hanlder"
         className="drawing-handler"
-        style={setTransform(getSelectionRegion(start, end))}
+        style={setTransform(getSelectionRegion(startOffset, endOffset, this))}
       />
-    </div>;
+    </div> : null;
   }
 
   render() {
@@ -120,21 +130,30 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     const onlyChild = React.Children.only(children);
     return <div
       className="react-grid-layout-selection-wrapper"
+      data-role="selection"
       style={{ ...style, position: 'relative' }}
       ref={this.wrapperRef}
       onMouseDown={this.startSelection}
     >
       {React.cloneElement(onlyChild, {
+        ref: this.props.forwardRef,
         onMouseDown: this.startSelection,
         onTouchStart: this.startSelection,
-        ref: this.childRef
       })}
       {this.drawingHandler()}
     </div>
   }
 }
 
-function getSelectionRegion(start: MousePosition, end: MousePosition): Position {
+export default React.forwardRef<HTMLElement, SelectionProps>(
+  (props, ref) => <Selection {...props} forwardRef={ref} />);
+
+function getSelectionRegion(
+  start: MousePosition,
+  end: MousePosition,
+  t: Selection,
+): Position {
+
   return {
     left: Math.min(start.x, end.x),
     top: Math.min(start.y, end.y),

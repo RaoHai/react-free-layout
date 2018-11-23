@@ -24,7 +24,8 @@ export interface DraggableData {
 export type DraggerEvent = TouchEvent | MouseEvent;
 
 export interface DraggableProps {
-  offsetParent: OffsetParent;
+  mounted: boolean;
+  offsetParent?: OffsetParent;
   onStart: (e: DraggerEvent, data: DraggableData) => void;
   onDrag: (e: DraggerEvent, data: DraggableData) => void | false;
   onStop: (e: DraggerEvent, data: DraggableData) => void;
@@ -96,10 +97,12 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
 
   render() {
     const child = React.Children.only(this.props.children);
-    return React.cloneElement(child, {
+    const events = this.props.mounted ? {
       onMouseDown: this.handleTopDragStart,
       onTouchStart: this.handleTopDragStart,
-    });
+    } : {};
+
+    return React.cloneElement(child, events);
   }
 
 

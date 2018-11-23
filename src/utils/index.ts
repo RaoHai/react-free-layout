@@ -63,15 +63,27 @@ export function classNames(...args: Array<string | {} | undefined>): string {
   return cls.join(' ');
 }
 
-export function setTransform({ top, left, width, height }: Position, z: number = 1): {} {
+export function setTransform(
+  { top, left, width, height }: Position,
+  useTransform = true,
+  z: number = 1,
+): {} {
   // Replace unitless items with px
   const translate = `translate(${left}px,${top}px)`;
-  return {
+  const transformProps = useTransform ? {
     transform: translate,
     WebkitTransform: translate,
     MozTransform: translate,
     msTransform: translate,
     OTransform: translate,
+  } : {
+    left: `${left}px`,
+    top: `${top}px`,
+  };
+
+
+  return {
+    ...transformProps,
     width: `${width}px`,
     height: `${height}px`,
     position: "absolute",
@@ -165,10 +177,11 @@ export function offsetXYFromParent(
 export function getRectFromPoints(start: MousePosition, end: MousePosition, colWidth: number): DOMRect {
   const x = Math.floor(Math.min(start.x, end.x));
   const y = Math.floor(Math.min(start.y, end.y));
-  const right = Math.ceil(Math.max(start.x, end.x) / colWidth);
-  const bottom = Math.ceil(Math.max(start.y, end.y) / colWidth);
+  return new DOMRect(x, y, Math.abs(start.x - end.x), Math.abs(start.y - end.y));
+}
 
-  return new DOMRect(x, y, Math.abs(right - x), Math.abs(bottom - y));
+export function pickLayout(layout: LayoutItem[], findLayout: Array<LayoutItem['i']>) {
+  return layout.filter(t => findLayout.indexOf(t.i) !== -1);
 }
 
 export function executeConstrains(size: number, constraints: [ number, number ]) {
@@ -299,7 +312,6 @@ function contains(
   targetRect: DOMRect,
   pickOption: PickOption,
 ): boolean {
-  console.log('>> contains', originRect, targetRect);
   if (pickOption === 'include') {
     return originRect.x < targetRect.x
       && originRect.y < targetRect.y
@@ -319,17 +331,16 @@ export function pickByRect<T>(
   pickOption: PickOption = 'contain',
 ): Array<LayoutItem['i']> {
   const result = [];
-  console.log('>> layoutRefs', layoutRefs);
   for (const key in layoutRefs) {
     if (layoutRefs.hasOwnProperty(key)) {
       const { current } = layoutRefs[key];
       const ele = ReactDOM.findDOMNode(current) as HTMLElement;
+
       if (!ele) {
         break;
       }
       const itemRect = getRectFromParent(ele,
         getOffsetParent(current.props.offsetParent) || ele.offsetParent || getOwnerDocument(ele));
-      console.log('>> itemRect', itemRect);
       if (contains(rect, itemRect, pickOption)) {
         result.push(key);
       }

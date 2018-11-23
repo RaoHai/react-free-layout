@@ -18,16 +18,21 @@ export default class DisposableComponent<P = {}, S = {}, SS = {}> extends Compon
     this.disposables.length = 0;
   }
 
-  protected getThisNode():Document {
+  protected getThisNode(): HTMLElement {
     const thisNode = findDOMNode(this);
-    return thisNode && thisNode.ownerDocument || document;
+    return thisNode && thisNode.ownerDocument && thisNode.ownerDocument.body || document.body;
+  }
+
+  protected getOwnerDocument(): Document {
+    const thisNode = findDOMNode(this);
+    return thisNode && thisNode.ownerDocument && thisNode.ownerDocument || document;
   }
 
   protected addEventListener<T extends keyof DocumentEventMap>(
     event: T,
     callback: (ev: DocumentEventMap[T]) => void,
     options?: AddEventListenerOptions,
-    target: HTMLElement | Document = this.getThisNode(),
+    target: HTMLElement | Document = this.getOwnerDocument(),
   ) {
     target.addEventListener(event, callback, options);
     const handler = () => target.removeEventListener(event, callback);

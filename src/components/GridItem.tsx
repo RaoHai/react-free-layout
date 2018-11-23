@@ -65,6 +65,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
     cancel: string;
     active?: boolean;
     selected?: boolean;
+    useTransform: boolean;
     onContextMenu?: MouseEventHandler;
   };
 
@@ -83,6 +84,8 @@ export default class GridItem extends Component<GridItemProps, {
     cancel: "",
     handle: "",
     scale: 1,
+    useTransform: true,
+    mounted: false,
   }
 
   constructor(props: GridItem['props']) {
@@ -168,15 +171,15 @@ export default class GridItem extends Component<GridItemProps, {
   }
 
   mixinDraggable(child: React.ReactElement<any>, draggable: boolean): React.ReactElement<any> {
-    const offsetParent = getOffsetParent(this.props.offsetParent);
     return (
       <Draggable
         onStart={this.onDragHandler("onDragStart")}
         onDrag={this.onDragHandler("onDrag")}
         onStop={this.onDragHandler("onDragStop")}
+        mounted={this.state.mounted}
         // disabled={!draggable}
         // handle={this.props.handle}
-        offsetParent={offsetParent}
+        offsetParent={this.props.offsetParent}
         // cancel={
         //   ".react-resizable-handle" +
         //   (this.props.cancel ? "," + this.props.cancel : "")
@@ -191,7 +194,7 @@ export default class GridItem extends Component<GridItemProps, {
     const {
       margin, colWidth, containerPadding, rowHeight, isDraggable = true,
       x, y, w, h, scale,
-      children, className, style, active, selected, onContextMenu,
+      children, className, style, active, selected, onContextMenu, useTransform,
     } = this.props;
 
     const out = {
@@ -229,7 +232,7 @@ export default class GridItem extends Component<GridItemProps, {
       style: {
         ...style,
         ...child.props.style,
-        ...setTransform(out),
+        ...setTransform(out, useTransform),
       },
       onContextMenu,
     });
