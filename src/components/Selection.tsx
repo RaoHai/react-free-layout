@@ -31,7 +31,8 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     onSelectEnd: noop,
     onSelect: noop,
   }
-  private dragWrapper = React.createRef<HTMLDivElement>();
+  private wrapperRef = React.createRef<HTMLDivElement>();
+  private childRef = React.createRef<React.Component<any>>();
 
   constructor(props: SelectionProps) {
     super(props);
@@ -42,9 +43,11 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
       touchIdentifier: 0,
     }
   }
+
   startSelection: React.MouseEventHandler<HTMLElement> = e => {
     if (
-      e.target !== this.dragWrapper.current &&
+      e.target !== this.wrapperRef.current &&
+      (!this.childRef.current || e.target !== ReactDOM.findDOMNode(this.childRef.current)) &&
       e.target !== getOffsetParent(this.props.offsetParent)
     ) {
       return;
@@ -103,16 +106,13 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
       return null;
     }
 
-    return ReactDOM.createPortal(
-      <>
-        <div className="react-grid-layout-selection-helper" />
-        <span
-          key="drawing-hanlder"
-          className="drawing-handler"
-          style={setTransform(getSelectionRegion(start, end))}
-        />
-      </>,
-      getOffsetParent(this.props.offsetParent));
+    return <div className="react-grid-layout-selection-helper">
+      <span
+        key="drawing-hanlder"
+        className="drawing-handler"
+        style={setTransform(getSelectionRegion(start, end))}
+      />
+    </div>;
   }
 
   render() {
@@ -120,15 +120,16 @@ export default class Selection extends DisposableComponent<SelectionProps, Selec
     const onlyChild = React.Children.only(children);
     return <div
       className="react-grid-layout-selection-wrapper"
-      style={style}
-      ref={this.dragWrapper}
+      style={{ ...style, position: 'relative' }}
+      ref={this.wrapperRef}
       onMouseDown={this.startSelection}
     >
-      {this.drawingHandler()}
       {React.cloneElement(onlyChild, {
         onMouseDown: this.startSelection,
         onTouchStart: this.startSelection,
+        ref: this.childRef
       })}
+      {this.drawingHandler()}
     </div>
   }
 }

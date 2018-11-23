@@ -1,6 +1,6 @@
-import React, { ReactChild, MouseEvent as ReactMouseEvent, isValidElement } from 'react';
-import LayoutState, { Groups, Group, LayoutItem, GridRect, defaultLevel, Layout } from '../model/LayoutState';
-import { classNames, isEqual } from '../utils';
+import React, { ReactChild, MouseEvent as ReactMouseEvent, isValidElement, Ref } from 'react';
+import LayoutState, { Groups, Group, LayoutItem, defaultLevel, Layout } from '../model/LayoutState';
+import { classNames, isEqual, pickByRect } from '../utils';
 
 import {
   getRectFromPoints,
@@ -14,7 +14,6 @@ import {
   hoistSelectionByParent,
   layoutEqual,
   mergeLayout,
-  pickByRect,
   stretchLayout,
   PickOption,
 } from '../utils';
@@ -31,7 +30,7 @@ export const temporaryGroupId = Symbol('template');
 const TOP = 999;
 export interface Group {
   id: string | symbol
-  rect?: GridRect;
+  rect?: DOMRect;
   layout: Layout;
 }
 
@@ -121,6 +120,7 @@ export type IGridLayoutProps = {
 export default class DeerGridLayout extends React.Component<IGridLayoutProps, IGridLayoutState> {
   public static defaultProps: Partial<IGridLayoutProps> = defaultProps;
   private offsetParent = React.createRef<HTMLDivElement>();
+  private layoutRefs: { [key in symbol]: Ref<GridItem> } = {}
 
   constructor(props: IGridLayoutProps) {
     super(props);
@@ -396,19 +396,24 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   selectLayoutItemByRect = (start?: MousePosition, end?: MousePosition) => {
-    const { selecting, colWidth, layoutState } = this.state;
+    const { selecting, colWidth } = this.state;
     if (!selecting || !start || !end) {
       return this.setState({ selectedLayout: [] });
     }
-
     const selectedLayout = pickByRect(
-      layoutState.layout,
+      this.layoutRefs,
       getRectFromPoints(start, end, colWidth),
       this.props.selectOption,
-    );
+    )
+    console.log('>>> selectLayoutItemByRect', selectedLayout);
+    // const selectedLayout = pickByRect(
+    //   layoutState.layout,
+    //   getRectFromPoints(start, end, colWidth),
+    //   this.props.selectOption,
+    // );
 
-    this.setState({ selectedLayout });
-    return selectedLayout;
+    // this.setState({ selectedLayout });
+    // return selectedLayout;
   }
 
   endSelection = (start?: MousePosition, end?: MousePosition) => {
@@ -419,7 +424,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     }
   }
 
-  selectGroup = (group: Group, groupRect: GridRect) => {
+  selectGroup = (group: Group, groupRect: DOMRect) => {
     if (!group) {
       return;
     }
@@ -531,7 +536,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     }
 
     return this.createGridItem(
-      activeDrag,
+      { ...activeDrag, i: '_t' },
       {
         onDrag: noop,
         onDragStart: noop,
@@ -541,6 +546,14 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       {
         className: 'react-grid-placeholder',
       });
+  }
+
+  getLayoutRefs = (i: LayoutItem['i']): Ref<GridItem> => {
+    if (!this.layoutRefs.hasOwnProperty(i)) {
+      this.layoutRefs[i] = React.createRef();
+    }
+
+    return this.layoutRefs[i];
   }
 
   createGridItem = (
@@ -571,6 +584,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       rowHeight={colWidth}
       offsetParent={this.getOffsetParent}
       onContextMenu={this.onContextMenu.bind(this, activeDrag)}
+      ref={this.getLayoutRefs(activeDrag.i)}
       {...callbacks}
     >
       {children}
@@ -597,7 +611,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       if (handlerName === 'onResize' || handlerName === 'onResizeStop') {
         const { layout } = group;
 
-        const strechedLayout = stretchLayout(layout, { x, y, right: x + w, bottom: y + h });
+        const strechedLayout = stretchLayout(layout, new DOMRect(x, y, x + w, y + h));
         const rect = getBoundingRectFromLayout(strechedLayout
           .filter(item => item.parent && item.parent === focusItem.i),
         );
@@ -628,7 +642,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     };
   }
 
-  renderGroupItem = (group: Group, rect: GridRect) => {
+  renderGroupItem = (group: Group, rect: DOMRect) => {
     const { activeGroup, focusItem } = this.state.layoutState;
 
     const selected = Boolean(activeGroup && activeGroup.id === group.id); // 是否激活
@@ -660,12 +674,15 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   children() {
-    const { layoutState, selecting } = this.state;
+    const { layoutState, selecting, mounted } = this.state;
     const children = layoutState.getChildren();
 
     const extraChildren: ReactChild[] = [];
     const childKeyMap: { [key: string]: ReactChild } = {};
 
+    if (!mounted) {
+      return null;
+    }
     React.Children.forEach(this.props.children, child => {
       if (!isValidElement(child) || !child.key) {
         extraChildren.push(child);
@@ -790,7 +807,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onSelect={this.selectLayoutItemByRect}
       onSelectEnd={this.endSelection}
       style={wrapperStyle}
-      offsetParent={this.getOffsetParent}
     >
       <div
         style={{

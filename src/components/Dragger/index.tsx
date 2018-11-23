@@ -111,11 +111,10 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
       !this.props.anyClick
       && (e as MouseEvent).button !== 0
     ) {
-      return;
+      return false;
     }
 
     const draggingData = createCoreData(this, position.x, position.y);
-
     this.setState({
       dragging: true,
       lastX: position.x,
@@ -132,6 +131,7 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
     this.addEventListener('touchmove', this.handleDrag, undefined, document);
     this.addEventListener('mouseup', this.handleDragStop, undefined, document);
     this.addEventListener('touchend', this.handleDragStop, undefined, document);
+    return true;
   }
 
   private handleDrag = (e: DraggerEvent) => {

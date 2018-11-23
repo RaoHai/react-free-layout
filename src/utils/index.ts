@@ -1,7 +1,8 @@
 import ReactDOM from 'react-dom';
-import { Layout, LayoutItem, Groups, Group, GridRect, defaultLevel } from '../model/LayoutState';
+import { Layout, LayoutItem, Groups, Group, defaultLevel } from '../model/LayoutState';
 import { temporaryGroupId, IGridLayoutProps } from '../components/Layout';
 import { MousePosition } from '../components/Selection';
+import { Ref } from 'react';
 export interface Position {
   left: number,
   top: number,
@@ -122,7 +123,7 @@ export function getControlPosition<T extends React.Component<{ offsetParent?: Of
 
   return offsetXYFromParent(
     touchObj || e as any,
-    t.props.offsetParent || getOwnerDocument(node),
+    getOffsetParent(t.props.offsetParent) || node.offsetParent || getOwnerDocument(node),
   );
 }
 
@@ -130,15 +131,27 @@ export function getOffsetParent(offsetParent?: OffsetParent): HTMLElement {
   if (typeof offsetParent === 'function') {
     return offsetParent() || document.body;
   }
-  return getOwnerDocument(offsetParent);
+  return offsetParent as HTMLElement;
+}
+
+export function getRectFromParent(
+  ele: Element,
+  offsetParent: HTMLElement,
+) {
+  const isBody = offsetParent === (offsetParent.ownerDocument && offsetParent.ownerDocument.body);
+  const offsetParentRect = isBody ? {left: 0, top: 0} : offsetParent.getBoundingClientRect();
+  const eleRect = ele.getBoundingClientRect();
+  const x = eleRect.left + offsetParent.scrollLeft - offsetParentRect.left;
+  const y = eleRect.top + offsetParent.scrollTop - offsetParentRect.top;
+
+  return new DOMRect(x, y, eleRect.width, eleRect.height);
 }
 
 export function offsetXYFromParent(
   evt: { clientX: number, clientY: number },
-  accesor?: OffsetParent,
+  offsetParent: HTMLElement,
 ) {
 
-  const offsetParent = getOffsetParent(accesor);
   const isBody = offsetParent === (offsetParent.ownerDocument && offsetParent.ownerDocument.body);
   const offsetParentRect = isBody ? {left: 0, top: 0} : offsetParent.getBoundingClientRect();
 
@@ -148,18 +161,14 @@ export function offsetXYFromParent(
   return { x, y };
 }
 
-export function getRectFromPoints(start: MousePosition, end: MousePosition, colWidth: number): GridRect {
-  const x = Math.min(start.x, end.x);
-  const y = Math.min(start.y, end.y);
-  const right = Math.max(start.x, end.x);
-  const btom = Math.max(start.y, end.y);
 
-  return {
-    x: Math.floor(x / colWidth),
-    y: Math.floor(y / colWidth),
-    right: Math.ceil(right / colWidth),
-    bottom: Math.ceil(btom / colWidth),
-  };
+export function getRectFromPoints(start: MousePosition, end: MousePosition, colWidth: number): DOMRect {
+  const x = Math.floor(Math.min(start.x, end.x));
+  const y = Math.floor(Math.min(start.y, end.y));
+  const right = Math.ceil(Math.max(start.x, end.x) / colWidth);
+  const bottom = Math.ceil(Math.max(start.y, end.y) / colWidth);
+
+  return new DOMRect(x, y, Math.abs(right - x), Math.abs(bottom - y));
 }
 
 export function executeConstrains(size: number, constraints: [ number, number ]) {
@@ -187,7 +196,7 @@ export function layoutEqual(value: LayoutItem[], other: LayoutItem[]) {
   return true;
 }
 
-export function bottom(layout: Layout): number {
+export function getBottom(layout: Layout): number {
   let max = 0;
   let bottomY;
   for (let i = 0, len = layout.length; i < len; i++) {
@@ -284,24 +293,50 @@ export function splitGroup(layout: Layout): Layout {
 }
 
 export type PickOption = 'include' | 'contain';
-export function pickByRect(
-  layout: Layout,
-  rect: GridRect,
-  pickOption: PickOption = 'contain',
-) {
-  return layout.filter(item => {
-    if (pickOption === 'include') {
-      return rect.x < item.x
-        && rect.y < item.y
-        && rect.right > item.x + item.w
-        && rect.bottom > item.y + item.h;
-    }
 
-    return rect.x < item.x + item.w
-      && rect.y < item.y + item.h
-      && rect.right > item.x
-      && rect.bottom > item.y
-  });
+function contains(
+  originRect: DOMRect,
+  targetRect: DOMRect,
+  pickOption: PickOption,
+): boolean {
+  console.log('>> contains', originRect, targetRect);
+  if (pickOption === 'include') {
+    return originRect.x < targetRect.x
+      && originRect.y < targetRect.y
+      && originRect.right > targetRect.right
+      && originRect.bottom > targetRect.bottom
+  }
+
+  return originRect.x < targetRect.right
+    && originRect.y < targetRect.bottom
+    && originRect.right > targetRect.x
+    && originRect.bottom > targetRect.y;
+}
+
+export function pickByRect<T>(
+  layoutRefs: { [key in symbol]: Ref<T> },
+  rect: DOMRect,
+  pickOption: PickOption = 'contain',
+): Array<LayoutItem['i']> {
+  const result = [];
+  console.log('>> layoutRefs', layoutRefs);
+  for (const key in layoutRefs) {
+    if (layoutRefs.hasOwnProperty(key)) {
+      const { current } = layoutRefs[key];
+      const ele = ReactDOM.findDOMNode(current) as HTMLElement;
+      if (!ele) {
+        break;
+      }
+      const itemRect = getRectFromParent(ele,
+        getOffsetParent(current.props.offsetParent) || ele.offsetParent || getOwnerDocument(ele));
+      console.log('>> itemRect', itemRect);
+      if (contains(rect, itemRect, pickOption)) {
+        result.push(key);
+      }
+    }
+  }
+
+  return result;
 }
 
 export function hoistSelectionByParent(
@@ -356,20 +391,20 @@ export function mergeLayout(
   return updateLayout(layout, newLayout, extraValue, (...args: any[]) => Object.assign(args[0], ...args.slice(1)));
 }
 
-export function getBoundingRectFromLayout(layout: Layout): GridRect {
+export function getBoundingRectFromLayout(layout: Layout): DOMRect {
   let x: number = Infinity;
   let y: number = Infinity;
   let right: number = -Infinity;
-  let btom: number = -Infinity;
+  let bottom: number = -Infinity;
 
   layout.forEach(i => {
     x = Math.min(i.x, x);
     y = Math.min(i.y, y);
     right = Math.max(i.x + i.w, right);
-    btom = Math.max(i.y + i.h, btom);
+    bottom = Math.max(i.y + i.h, bottom);
   });
 
-  return { x, y, right, bottom: btom }
+  return new DOMRect(x, y, right - x, bottom - y);
 }
 
 /**
@@ -385,7 +420,7 @@ export function getBoundingRectFromLayout(layout: Layout): GridRect {
  * @param layout 布局数组
  * @param restrict 限定的 Rect
  */
-export function stretchLayout(layout: LayoutItem[], restrict: GridRect): LayoutItem[] {
+export function stretchLayout(layout: LayoutItem[], restrict: DOMRect): LayoutItem[] {
 
   const originRect = getBoundingRectFromLayout(layout);
   const w = originRect.right - originRect.x;
@@ -411,23 +446,23 @@ export function calcPosition(
   h: number,
   colWidth: number,
   containerPadding: [number, number],
-  suppliter = Math.round
+  scale: number = 1,
 ) {
 
   const out = {
-    left: suppliter(colWidth * x + containerPadding[0]),
-    top: suppliter(colWidth * y + containerPadding[1]),
+    left: Math.round(colWidth * x + containerPadding[0]) * scale,
+    top: Math.round(colWidth * y + containerPadding[1]) * scale,
     // 0 * Infinity === NaN, which causes problems with resize constraints;
     // Fix this if it occurs.
     // Note we do it here rather than later because Math.round(Infinity) causes deopt
     width:
       w === Infinity
         ? w
-        : Math.round(colWidth * w),
+        : Math.round(colWidth * w) * scale,
     height:
       h === Infinity
         ? h
-        : Math.round(colWidth * h)
+        : Math.round(colWidth * h) * scale,
   };
 
   return out;
@@ -452,7 +487,7 @@ export function calcColWidth(
 }
 
 export function percentile(layout: Layout, cols: number, height?: number) {
-  const h = height ? bottom(layout) : 1;
+  const h = height ? getBottom(layout) : 1;
   return layout.map(i => ({
     ...i,
     x: i.x / cols,

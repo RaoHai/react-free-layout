@@ -1,5 +1,5 @@
-import { isEqual, classNames } from '../index';
-import { percentile, getCols, layoutlize, bringForward, bringBack, bringTop, bringBottom, layoutEqual, bottom, updateLayout } from '../index';
+import { isEqual, classNames, getBottom } from '../index';
+import { percentile, getCols, layoutlize, bringForward, bringBack, bringTop, bringBottom, layoutEqual, updateLayout } from '../index';
 
 describe('utils functions', () => {
   test('isEquals', () => {
@@ -81,7 +81,7 @@ describe('utils functions', () => {
       { i: 'b', x: 25, y: 10, w: 10, h: 10 }
     ];
     const colWidth = 10;
-    const height = bottom(layout) * colWidth;
+    const height = getBottom(layout) * colWidth;
     const cols = getCols({ width, grid: [10, 10] });
     const p = percentile(layout, cols, height);
     expect(p).toEqual([

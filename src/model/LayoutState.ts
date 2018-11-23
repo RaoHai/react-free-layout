@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import {
-  bottom,
+  getBottom,
   getBoundingRectFromLayout,
   getLayoutItem,
   mergeLayout,
@@ -30,16 +30,9 @@ export interface LayoutItem {
 export type Layout = LayoutItem[];
 
 
-export interface GridRect {
-  x: number;
-  y: number;
-  right: number;
-  bottom: number;
-}
-
 export interface Group {
   id: string | symbol
-  rect?: GridRect;
+  rect?: DOMRect;
   layout: LayoutItem[];
   level: number[];
 }
@@ -115,7 +108,7 @@ export default class LayoutState {
       const definitionInLayout = getLayoutItem(layout, String(child.key));
       const definition = definitionInLayout ?
         definitionInLayout :
-        (child.props['data-grid'] || { w: 1, h: 1, x: 0, y: bottom(layout), i: String(child.key) });
+        (child.props['data-grid'] || { w: 1, h: 1, x: 0, y: getBottom(layout), i: String(child.key) });
 
       if (definition.parent && !parentMap.hasOwnProperty(definition.parent)) {
         delete definition.parent;
@@ -154,7 +147,7 @@ export default class LayoutState {
     }
 
     this.focusItem = focusItemVisited ? focusItem : undefined;
-    this.bottom = bottom(layout);
+    this.bottom = getBottom(layout);
     this.levelMap = levelMap;
 
     this.synchronized = true;

@@ -16,6 +16,7 @@ storiesOf("Basic Usage", module)
   .add('single layout item', () => <Layout
     {...dragActions}
     width={1024}
+    style={{ transform: 'scale3d(0.8, 0.8, 1)'}}
     grid={[8, 8]}
     layout={[{ i: 'a', w: 12, h: 10, x: 10, y: 10 }]}
   >
@@ -38,7 +39,14 @@ storiesOf("Basic Usage", module)
   >
     {generateDOM(layout)}
   </Layout>
-  );
+  ).add('layout with scale', () => <Layout
+    {...dragActions}
+    layout={layout}
+    width={1024}
+    grid={[8, 8]}
+  >
+    {generateDOM(layout)}
+  </Layout>);
 
 storiesOf("Group Usage", module)
   .add('random group', () => <Layout

@@ -1,6 +1,6 @@
 import React, { Component, MouseEventHandler } from 'react';
 import Draggable, { DraggableData, DraggerEvent } from './Dragger';
-import { setTransform, getOffsetParent, OffsetParent, classNames } from '../utils';
+import { setTransform, getOffsetParent, OffsetParent, classNames, offsetXYFromParent } from '../utils';
 import { LayoutItem } from '../model/LayoutState';
 
 const canUseDOM = !!(
@@ -52,6 +52,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
     offsetParent?: OffsetParent;
     className?: string;
     cols: number;
+    scale: number;
     maxRows: number;
     usePercentages?: boolean;
     containerWidth: number;
@@ -81,6 +82,7 @@ export default class GridItem extends Component<GridItemProps, {
     margin: [ 0, 0],
     cancel: "",
     handle: "",
+    scale: 1,
   }
 
   constructor(props: GridItem['props']) {
@@ -126,13 +128,14 @@ export default class GridItem extends Component<GridItemProps, {
 
       switch (handlerName) {
         case 'onDragStart':
-          const offsetParent = getOffsetParent(this.props.offsetParent);
-          const parentRect = offsetParent.getBoundingClientRect();
           const clientRect = node.getBoundingClientRect();
-          newPosition.left =
-            clientRect.left - parentRect.left + offsetParent.scrollLeft;
-          newPosition.top =
-            clientRect.top - parentRect.top + offsetParent.scrollTop;
+          const xy = offsetXYFromParent({
+            clientX: clientRect.left,
+            clientY: clientRect.top,
+          }, getOffsetParent(this.props.offsetParent));
+
+          newPosition.left = xy.x;
+          newPosition.top = xy.y
           this.setState({ dragging: newPosition });
         break;
         case 'onDrag':
@@ -187,24 +190,24 @@ export default class GridItem extends Component<GridItemProps, {
   render() {
     const {
       margin, colWidth, containerPadding, rowHeight, isDraggable = true,
-      x, y, w, h,
+      x, y, w, h, scale,
       children, className, style, active, selected, onContextMenu,
     } = this.props;
 
     const out = {
-      left: Math.round((colWidth + margin[0]) * x + containerPadding[0]),
-      top: Math.round((rowHeight + margin[1]) * y + containerPadding[1]),
+      left: Math.round((colWidth + margin[0]) * x + containerPadding[0]) * scale,
+      top: Math.round((rowHeight + margin[1]) * y + containerPadding[1]) * scale,
       // 0 * Infinity === NaN, which causes problems with resize constraints;
       // Fix this if it occurs.
       // Note we do it here rather than later because Math.round(Infinity) causes deopt
       width:
         w === Infinity
           ? w
-          : Math.round(colWidth * w + Math.max(0, w - 1) * margin[0]),
+          : Math.round(colWidth * w + Math.max(0, w - 1) * margin[0]) * scale,
       height:
         h === Infinity
           ? h
-          : Math.round(rowHeight * h + Math.max(0, h - 1) * margin[1]),
+          : Math.round(rowHeight * h + Math.max(0, h - 1) * margin[1]) * scale,
     };
 
     const child = React.Children.only(children);

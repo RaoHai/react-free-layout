@@ -12,6 +12,7 @@ describe('Selection', () => {
     const selectEndFn = jest.fn();
 
     const wrapper = mount(<Selection
+      onSelectStart={() => {}}
       onSelect={selectfn}
       onSelectEnd={selectEndFn}
     >
@@ -196,6 +197,7 @@ describe('touchEvent', () => {
     const selectEndFn = jest.fn();
 
     const wrapper = mount(<Selection
+      onSelectStart={() => {}}
       onSelect={selectfn}
       onSelectEnd={selectEndFn}
     >
