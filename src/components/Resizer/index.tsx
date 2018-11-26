@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { OffsetParent, setTransform, getOffsetParent, classNames, executeConstrains } from '../../utils';
+import { OffsetParent, setTransform, classNames, executeConstrains } from '../../utils';
 import { Position } from '../GridItem';
 import { LayoutItem } from '../../model/LayoutState';
 import Draggable, { DraggableData, DraggerEvent } from '../Dragger/index';
@@ -223,7 +223,7 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
             onStop={this.resizeHandler('onResizeStop', { key, direction })}
             onStart={this.resizeHandler('onResizeStart', { key, direction })}
             onDrag={this.resizeHandler('onResize', { key, direction })}
-            offsetParent={getOffsetParent(offsetParent)}
+            offsetParent={offsetParent}
             mounted={true}
           >
             <span className={`react-resizable-handle react-resizable-handle-${key}`} />

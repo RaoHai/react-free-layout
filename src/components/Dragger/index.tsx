@@ -42,7 +42,7 @@ function createCoreData(draggable: Draggable, x: number, y: number): DraggableDa
       node,
       x, y,
       deltaX: 0, deltaY: 0,
-      lastX: x, lastY: 0,
+      lastX: x, lastY: y,
     };
   }
 
@@ -109,7 +109,6 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
   private handleTopDragStart = (e: DraggerEvent | MouseEvent) => {
     const touchIdentifier = getTouchIdentifier(e as any);
     const position = getControlPosition(e as any, touchIdentifier, this);
-
     if (
       !this.props.anyClick
       && (e as MouseEvent).button !== 0

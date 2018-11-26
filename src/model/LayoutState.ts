@@ -308,7 +308,9 @@ export default class LayoutState {
     focusItem: LayoutItem | undefined,
     activeGroup: Group | undefined,
   ) {
-    this.focusItem = focusItem;
+    if (!focusItem || !focusItem.static) {
+      this.focusItem = focusItem;
+    }
     this.activeGroup = activeGroup;
     return this;
   }

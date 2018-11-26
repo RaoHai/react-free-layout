@@ -1,6 +1,6 @@
 {
-  "name": "@alipay/deer-free-layout",
-  "version": "1.1.17",
+  "name": "react-free-layout",
+  "version": "1.1.18",
   "description": "A draggable and resizable free layout for React.",
   "repository": {
     "type": "git",
@@ -181,8 +181,5 @@
   },
   "eslintConfig": {
     "extends": "react-app"
-  },
-  "publishConfig": {
-    "registry": "http://registry.npm.alibaba-inc.com"
   }
 }

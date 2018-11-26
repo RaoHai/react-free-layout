@@ -356,7 +356,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
   // 点击，仅处理多选时再点击的行为
   selectItem = (l: LayoutItem) => {
-    if (!l || !l.parent) {
+    if (!l || !l.parent || l.static) {
       return;
     }
 
