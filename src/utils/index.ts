@@ -460,14 +460,17 @@ export function stretchLayout(layout: LayoutItem[], restrict: GridRect): LayoutI
   const nw = restrict.right - restrict.x;
   const nh = restrict.bottom - restrict.y;
 
-  return layout.map(i => ({
-    ...i,
-    x: ((i.x - originRect.x) * nw / w) + restrict.x,
-    y: ((i.y - originRect.y) * nh / h) + restrict.y,
-    w: i.w * nw / w,
-    h: i.h * nh / h,
-  }));
-
+  return layout.map(i => {
+    const canStretchX = !i.stretchOptions || i.stretchOptions === 'both' || i.stretchOptions === 'x';
+    const canStretchY = !i.stretchOptions || i.stretchOptions === 'both' || i.stretchOptions === 'y';
+    return {
+      ...i,
+      x: ((i.x - originRect.x) * nw / w) + restrict.x,
+      y: ((i.y - originRect.y) * nh / h) + restrict.y,
+      w: canStretchX ? i.w * nw / w : i.w,
+      h: canStretchY ? i.h * nh / h : i.h,
+    };
+  });
 }
 
 export function calcPosition(

@@ -613,7 +613,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       if (handlerName === 'onResize' || handlerName === 'onResizeStop') {
         const { layout } = group;
 
-        const strechedLayout = stretchLayout(layout, new GridRect(x, y, x + w, y + h));
+        const strechedLayout = stretchLayout(layout, new GridRect(x, y, w, h));
         const rect = getBoundingRectFromLayout(strechedLayout
           .filter(item => item.parent && item.parent === focusItem.i),
         );
