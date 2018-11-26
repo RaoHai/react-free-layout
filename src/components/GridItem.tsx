@@ -60,6 +60,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
     active?: boolean;
     selected?: boolean;
     useTransform: boolean;
+    inGroup?: boolean;
     onContextMenu?: MouseEventHandler;
   };
 
@@ -186,7 +187,7 @@ export default class GridItem extends Component<GridItemProps, {
   render() {
     const {
       margin, colWidth, containerPadding, rowHeight, isDraggable = true,
-      x, y, w, h, scale,
+      x, y, w, h, scale, inGroup,
       children, className, style, active, selected, onContextMenu, useTransform,
     } = this.props;
 
@@ -219,6 +220,7 @@ export default class GridItem extends Component<GridItemProps, {
           "react-draggable-dragging": Boolean(this.state.dragging),
           active: Boolean(active),
           selected: Boolean(selected),
+          "in-group": Boolean(inGroup),
         },
       ),
       // We can set the width and height on the child, but unfortunately we can't set the position.

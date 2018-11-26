@@ -516,6 +516,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     const active = Boolean(focusItem && focusItem.i === String(key));
     const selected = Boolean(selectedLayout && selectedLayout.find(item => item.i === String(key)));
+    const inGroup = !!l.parent;
 
     return this.createGridItem(l, {
       onDragStop: this.onDragStop,
@@ -526,6 +527,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       isResizable: resizable,
       active,
       selected,
+      inGroup,
     });
   }
 
