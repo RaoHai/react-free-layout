@@ -357,7 +357,7 @@ export function pickByRect<T>(
       const ele = ReactDOM.findDOMNode(current) as HTMLElement;
 
       if (!ele) {
-        break;
+        continue;
       }
       const itemRect = getRectFromParent(ele,
         getOffsetParent(current.props.offsetParent) || ele.offsetParent || getOwnerDocument(ele));

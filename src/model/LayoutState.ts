@@ -8,6 +8,7 @@ import {
   GridRect,
 } from '../utils';
 
+export type StretchOptions = 'none' | 'x' | 'y' | 'both';
 export interface LayoutItem {
   w: number;
   h: number;
@@ -21,6 +22,7 @@ export interface LayoutItem {
   maxH?: number;
   moved?: boolean;
   static?: boolean;
+  stretchOptions?: StretchOptions;
   isDraggable?: boolean;
   isResizable?: boolean;
   placeholder?: boolean;
