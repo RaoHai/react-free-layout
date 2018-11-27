@@ -106,7 +106,16 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
   };
   // a poll implement of static getDerivedStateFromProps
   componentWillReceiveProps(nextProps: ResizeableProps) {
-    this.setState(state => ({ ...state, ...Resizer.derivedStateFromProps(nextProps) }))
+    const resetState = nextProps.i !== this.props.i ? {
+      lastX: 0,
+      lastY: 0,
+      resizing: false,
+    } : {};
+    this.setState(state => ({
+      ...state,
+      ...Resizer.derivedStateFromProps(nextProps),
+      ...resetState,
+    }));
   }
 
   resizeHandler = (handlerName: keyof ResizeCallbacks<any>, axisOptions: AxisOpt) => {

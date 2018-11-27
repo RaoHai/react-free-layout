@@ -451,7 +451,11 @@ export function getBoundingRectFromLayout(layout: Layout): GridRect {
  * @param layout 布局数组
  * @param restrict 限定的 Rect
  */
-export function stretchLayout(layout: LayoutItem[], restrict: GridRect): LayoutItem[] {
+export function stretchLayout(
+  layout: LayoutItem[],
+  restrict: GridRect,
+  stretchOptions: { strict: boolean } = { strict: false }
+): LayoutItem[] {
 
   const originRect = getBoundingRectFromLayout(layout);
   const w = originRect.right - originRect.x;
@@ -461,8 +465,11 @@ export function stretchLayout(layout: LayoutItem[], restrict: GridRect): LayoutI
   const nh = restrict.bottom - restrict.y;
 
   return layout.map(i => {
-    const canStretchX = !i.stretchOptions || i.stretchOptions === 'both' || i.stretchOptions === 'x';
-    const canStretchY = !i.stretchOptions || i.stretchOptions === 'both' || i.stretchOptions === 'y';
+    let canStretchX = i.stretchOptions === 'both' || i.stretchOptions === 'x';
+    let canStretchY = i.stretchOptions === 'both' || i.stretchOptions === 'y';
+
+    canStretchX = stretchOptions.strict ? canStretchX : (canStretchX || !i.stretchOptions);
+    canStretchY = stretchOptions.strict ? canStretchY : (canStretchY || !i.stretchOptions);
     return {
       ...i,
       x: ((i.x - originRect.x) * nw / w) + restrict.x,
@@ -470,6 +477,27 @@ export function stretchLayout(layout: LayoutItem[], restrict: GridRect): LayoutI
       w: canStretchX ? i.w * nw / w : i.w,
       h: canStretchY ? i.h * nh / h : i.h,
     };
+  });
+}
+
+export function autoFit(layout: LayoutItem[], restrict: GridRect) {
+  return layout.map(i => {
+    if (!i.stretchOptions) {
+      return i;
+    }
+
+
+    if (i.stretchOptions === 'x' || i.stretchOptions === 'both') {
+      i.x = restrict.x;
+      i.w = restrict.width;
+    }
+
+    if (i.stretchOptions === 'y' || i.stretchOptions === 'both') {
+      i.y = restrict.y;
+      i.h = restrict.height;
+    }
+
+    return i;
   });
 }
 

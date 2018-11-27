@@ -257,9 +257,8 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     // Set state
     this.setState({
       layoutState: movedState.endDrag(),
-    });
+    }, () => this.onLayoutMaybeChanged(movedState.layout));
 
-    this.onLayoutMaybeChanged(layoutState.layout);
   }
 
   onDragContainerStart = (i: string | symbol, { e, node }: GridDragEvent) => {
@@ -335,8 +334,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     // Set state
     this.setState({
       layoutState: layoutState.set({ activeDrag: null }),
-    })
-    this.props.onLayoutChange(layoutState.layout);
+    }, () => this.props.onLayoutChange(layoutState.layout));
   }
 
   onContextMenu = (currentItem: LayoutItem, e: ReactMouseEvent) => {
@@ -374,7 +372,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     return this.setState({
       layoutState: this.state.layoutState.set({ focusItem: l }),
     });
-
   }
 
   onLayoutMaybeChanged(newLayout: Layout, oldLayout?: Layout | null) {

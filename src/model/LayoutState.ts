@@ -6,6 +6,7 @@ import {
   mergeLayout,
   moveElement,
   GridRect,
+  autoFit,
 } from '../utils';
 
 export type StretchOptions = 'none' | 'x' | 'y' | 'both';
@@ -195,7 +196,7 @@ export default class LayoutState {
       return this;
     }
 
-    if (moveWithParent && l.parent && focusItem) {
+    if (moveWithParent && l.parent && focusItem && l.parent === focusItem.i) {
       // const elementToMove
       const container = this.getGroup(l.parent);
       if (!container) {
@@ -225,7 +226,7 @@ export default class LayoutState {
         z: TOP
       };
 
-      this.layout = mergeLayout(this.layout, moved);
+      this.merge(moved);
       const rect = getBoundingRectFromLayout(this.layout.filter(t => t.parent && t.parent === focusItem.i));
       this.focusItem = {
         ...focusItem,
@@ -259,8 +260,30 @@ export default class LayoutState {
     return this;
   }
 
+  stretch = (layoutItem: LayoutItem) => {
+    if (!layoutItem.parent) {
+      return layoutItem;
+    }
+    const container = this.getGroup(layoutItem.parent);
+
+    const stretched = autoFit(
+      container.layout,
+      getBoundingRectFromLayout(container.layout),
+    );
+
+    return stretched.find(i => i.i === layoutItem.i) as LayoutItem;
+  }
+
   merge(newLayout: LayoutItem[]) {
+    const itemsToStretch: LayoutItem[] = this.layout
+      .filter(i => Boolean(i.stretchOptions && i.stretchOptions !== 'none'));
+
     this.layout = mergeLayout(this.layout, newLayout);
+    this.mergeGroup(this.layout);
+
+    this.layout = itemsToStretch.length ?
+      mergeLayout(this.layout, itemsToStretch.map(this.stretch)) :
+      this.layout;
     return this;
   }
 
@@ -274,6 +297,24 @@ export default class LayoutState {
 
   getGroup(id: Group['id']): Group {
     return this.groups[id];
+  }
+
+  mergeGroup(layout: LayoutItem[]) {
+    for (let i = 0; i < layout.length; i++) {
+      const item = layout[i];
+      if (!item.parent) {
+        continue;
+      }
+
+      const container: Group = this.groups[item.parent];
+      if (!container) {
+        continue;
+      }
+
+      container.layout = container.layout.map(
+        layoutInContainer => layoutInContainer.i === item.i ? item : layoutInContainer,
+      );
+    }
   }
 
   addGroup(groupId: Group['id'], params: Group) {
