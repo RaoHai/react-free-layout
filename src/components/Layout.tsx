@@ -59,6 +59,7 @@ const defaultProps = {
   onLayoutSelect: noop,
   isDraggable: true,
   isResizable: true,
+  resizeHelper: false,
   onLayoutChange: noop,
   onContextMenu: noop,
   selectOption: 'contain' as PickOption,
@@ -108,6 +109,7 @@ export type IGridLayoutProps = {
   children: JSX.Element[] | JSX.Element;
   isDraggable?: boolean;
   isResizable?: boolean;
+  resizeHelper?: boolean;
   minConstraints: [ number, number ];
   maxConstraints: [ number, number ];
   selectOption?: PickOption;
@@ -745,7 +747,12 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   resizer = () => {
-    const { minConstraints: propsMinConstraints, maxConstraints: propsMaxConstraints } = this.props;
+    const {
+      minConstraints: propsMinConstraints,
+      maxConstraints: propsMaxConstraints,
+      resizeHelper,
+    } = this.props;
+
     const { colWidth, mounted } = this.state;
     const { focusItem, activeGroup } = this.state.layoutState;
     if (!focusItem || !mounted) {
@@ -794,6 +801,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       calcWH={this.getWHCalculator()}
       colWidth={colWidth}
       rowHeight={colWidth}
+      helper={resizeHelper}
     />;
   }
 

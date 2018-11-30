@@ -89,6 +89,7 @@ export default class LayoutState {
   synchronizeLayoutWithChildren(children: JSX.Element[] | JSX.Element) {
     const { layout, groups, focusItem } = this;
     let focusItemVisited = false;
+    const definitionMap = {};
     const parentMap = {};
     const levelMap = {};
 
@@ -117,12 +118,12 @@ export default class LayoutState {
       if (definition.parent && !parentMap.hasOwnProperty(definition.parent)) {
         delete definition.parent;
       }
+      definitionMap[definition.i] = { definition, child };
 
       const z = Number(definition.z || defaultLevel);
       if (!levelMap[z]) {
         levelMap[z] = { items: [], groups: [], };
       }
-      levelMap[z].items.push({ definition, child });
 
       if (parentMap.hasOwnProperty(definition.i)) {
         const parentId = parentMap[definition.i];
@@ -131,6 +132,10 @@ export default class LayoutState {
         if (z !== defaultLevel) {
           groups[parentId].level.push(z);
         }
+      }
+
+      if (!definition.parent) {
+        levelMap[z].items.push({ definition, child });
       }
 
       const item = layout[index];
@@ -146,7 +151,14 @@ export default class LayoutState {
         if (!levelMap[level]) {
           levelMap[level] = { items: [], groups: [], };
         }
-        levelMap[level].groups.push(groups[key]);
+        levelMap[level].groups.push(group);
+
+        for (let i = 0; i < group.layout.length; i++) {
+          const layoutId = group.layout[i].i;
+          if (definitionMap.hasOwnProperty(layoutId)) {
+            levelMap[level].items.push(definitionMap[layoutId]);
+          }
+        }
       }
     }
 
