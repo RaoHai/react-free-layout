@@ -2,6 +2,7 @@ import React, { Component, MouseEventHandler } from 'react';
 import Draggable, { DraggableData, DraggerEvent } from './Dragger';
 import { setTransform, getOffsetParent, OffsetParent, classNames, offsetXYFromParent, canUseDOM } from '../utils';
 import { LayoutItem } from '../model/LayoutState';
+import { temporaryGroupId } from './Layout';
 
 export interface GridDragEvent {
   e: DraggerEvent;
@@ -61,6 +62,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
     selected?: boolean;
     useTransform: boolean;
     inGroup?: boolean;
+    parent?: LayoutItem['parent'];
     onContextMenu?: MouseEventHandler;
   };
 
@@ -188,7 +190,7 @@ export default class GridItem extends Component<GridItemProps, {
     const {
       margin, colWidth, containerPadding, rowHeight, isDraggable = true,
       x, y, w, h, scale, inGroup,
-      children, className, style, active, selected, onContextMenu, useTransform,
+      parent, children, className, style, active, selected, onContextMenu, useTransform,
     } = this.props;
 
     const out = {
@@ -221,6 +223,7 @@ export default class GridItem extends Component<GridItemProps, {
           active: Boolean(active),
           selected: Boolean(selected),
           "in-group": Boolean(inGroup),
+          "in-temporary-group": parent === temporaryGroupId
         },
       ),
       // We can set the width and height on the child, but unfortunately we can't set the position.

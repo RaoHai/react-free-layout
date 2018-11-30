@@ -586,6 +586,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       offsetParent={this.getOffsetParent}
       onContextMenu={this.onContextMenu.bind(this, activeDrag)}
       ref={this.getLayoutRefs(activeDrag.i)}
+      parent={activeDrag.parent}
       {...callbacks}
     >
       {children}
