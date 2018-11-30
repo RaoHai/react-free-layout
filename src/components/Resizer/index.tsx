@@ -3,6 +3,7 @@ import { OffsetParent, setTransform, classNames, executeConstrains } from '../..
 import { Position } from '../GridItem';
 import { LayoutItem } from '../../model/LayoutState';
 import Draggable, { DraggableData, DraggerEvent } from '../Dragger/index';
+import ResizeHelper from './helper';
 
 export interface AxisOpt {
   key: string;
@@ -69,6 +70,7 @@ LayoutItem & {
   rowHeight: number;
   widthConstrains: [ number, number ];
   heightConstrains: [ number, number ];
+  helper?: boolean;
 }
 
 export interface ResizeState {
@@ -77,9 +79,11 @@ export interface ResizeState {
   y: number;
   h: number;
   w: number;
-  resizing: boolean;
+  resizing: boolean | string;
   lastX: number;
   lastY: number;
+  cX: number,
+  cY: number,
   originPosition?: Position;
   originLayout?: Pick<LayoutItem, 'x' | 'y' | 'w' | 'h'>;
   resizingPosition?: Position;
@@ -103,13 +107,18 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
     lastX: 0,
     lastY: 0,
     resizing: false,
+    cX: 0,
+    cY: 0,
   };
   // a poll implement of static getDerivedStateFromProps
   componentWillReceiveProps(nextProps: ResizeableProps) {
     const resetState = nextProps.i !== this.props.i ? {
       lastX: 0,
       lastY: 0,
+      cx: 0,
+      cy: 0,
       resizing: false,
+
     } : {};
     this.setState(state => ({
       ...state,
@@ -139,6 +148,8 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
         this.setState({
           lastX,
           lastY,
+          cX,
+          cY,
           originLayout: layout,
           originPosition: calcPosition(x, y, w, h),
         });
@@ -201,6 +212,8 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
 
       // const resizin
       this.setState({
+        cX,
+        cY,
         resizing: handlerName === 'onResizeStop' ? false : true,
         resizingPosition: handlerName === 'onResizeStop' ? undefined : size,
         resizingLayout: handlerName === 'onResizeStop' ? undefined : layout,
@@ -217,8 +230,8 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
   }
 
   render() {
-    const { draggableOpts, calcPosition, className, offsetParent } = this.props;
-    const { x, y, w, h, resizing } = this.state;
+    const { draggableOpts, calcPosition, className, offsetParent, helper } = this.props;
+    const { x, y, w, h, resizing, cX, cY } = this.state;
     const position = calcPosition(x, y, w, h);
     const style = setTransform(position);
     const cls = classNames('react-grid-layout-resizer', className);
@@ -238,6 +251,10 @@ export default class Resizer extends PureComponent<ResizeableProps, ResizeState>
             <span className={`react-resizable-handle react-resizable-handle-${key}`} />
           </Draggable>)}
         </div>
+        {helper && resizing ? <ResizeHelper
+            size={{ w, h }}
+            style={{ left: cX, top: cY }}
+          /> : null }
       </>
     )
   }

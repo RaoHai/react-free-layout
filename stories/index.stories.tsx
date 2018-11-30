@@ -25,6 +25,15 @@ storiesOf("Basic Usage", module)
       <div key="a">xxx</div>
     </Layout>
   </>)
+  .add('helper', () => <Layout
+    {...dragActions}
+    width={1024}
+    grid={[8, 8]}
+    resizeHelper={true}
+    layout={[{ i: 'a', w: 12, h: 10, x: 10, y: 10 }]}
+  >
+    <div key="a">xxx</div>
+  </Layout>)
   .add('size Constraints', () => <Layout
     {...dragActions}
     width={1024}
@@ -45,8 +54,9 @@ storiesOf("Basic Usage", module)
   ).add('layout with scale', () => <Layout
     {...dragActions}
     layout={layout}
-    width={1024}
-    grid={[8, 8]}
+    style={{ margin: '0 auto' }}
+    width={600}
+    grid={[10, 5]}
   >
     {generateDOM(layout)}
   </Layout>);

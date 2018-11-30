@@ -91,6 +91,8 @@ export function setTransform(
   // Replace unitless items with px
   const translate = `translate(${left}px,${top}px)`;
   const transformProps = useTransform ? {
+    left: 0,
+    top: 0,
     transform: translate,
     WebkitTransform: translate,
     MozTransform: translate,
@@ -507,24 +509,19 @@ export function calcPosition(
   w: number,
   h: number,
   colWidth: number,
+  rowHeight: number,
   containerPadding: [number, number],
   scale: number = 1,
 ) {
 
   const out = {
     left: Math.round(colWidth * x + containerPadding[0]) * scale,
-    top: Math.round(colWidth * y + containerPadding[1]) * scale,
+    top: Math.round(rowHeight * y + containerPadding[1]) * scale,
     // 0 * Infinity === NaN, which causes problems with resize constraints;
     // Fix this if it occurs.
     // Note we do it here rather than later because Math.round(Infinity) causes deopt
-    width:
-      w === Infinity
-        ? w
-        : Math.round(colWidth * w) * scale,
-    height:
-      h === Infinity
-        ? h
-        : Math.round(colWidth * h) * scale,
+    width: Math.round(colWidth * w) * scale,
+    height: Math.round(rowHeight * h) * scale,
   };
 
   return out;
@@ -533,7 +530,6 @@ export function calcPosition(
 export function isTemporaryGroup(item: LayoutItem) {
   return item.i === temporaryGroupId;
 }
-
 
 export function getCols({ width, grid }: Pick<IGridLayoutProps, 'width' | 'grid'>) {
   return Math.ceil(width / grid[0]);
@@ -569,6 +565,7 @@ export function layoutlize(layout: Layout, cols: number, unitHeight?: number) {
     h: Math.round(i.h * h),
   }));
 }
+
 
 export function changeItemLevel(item: LayoutItem, fn: (z: number) => number) {
   return {

@@ -24,6 +24,25 @@ describe('single layout', () => {
     expect(wrapper.instance()).toBeNull();
   });
 
+  test('layout with different grid', () => {
+    const wrapper = mount(<Layout
+      layout={[{ i: 'a', x: 10, y: 10, w: 10, h: 10}]}
+      width={1024}
+      grid={[10, 5]}
+    >
+      <div key="a" id="a">hello world</div>
+    </Layout>);
+
+    expect(wrapper.find('div')).not.toBeNull();
+    expect(toJSON(wrapper));
+
+    const a = wrapper.find('#a');
+    const instance = (a.instance() as any);
+    expect(instance.style.width).toEqual('99px');
+    expect(instance.style.height).toEqual('50px');
+    wrapper.unmount();
+  });
+
   test('select and move layout item', () => {
     const wrapper = mount(<Layout
       layout={[

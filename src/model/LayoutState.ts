@@ -8,6 +8,7 @@ import {
   GridRect,
   autoFit,
 } from '../utils';
+import { temporaryGroupId } from '../components/Layout';
 
 export type StretchOptions = 'none' | 'x' | 'y' | 'both';
 export interface LayoutItem {
@@ -64,6 +65,14 @@ export type LayoutChildren = GroupChild | LayoutChild;
 export const defaultLevel = -Infinity;
 export const TOP = 999;
 
+function recoverFromMap(layout: LayoutItem[], parentId: Group['id'], definitionMap: {}) {
+  return layout.reduce((prev, curr) => {
+    if (definitionMap.hasOwnProperty(curr.i) && definitionMap[curr.i].definition.parent === parentId) {
+      return prev.concat([ definitionMap[curr.i].definition]);
+    }
+    return prev;
+  }, [] as LayoutItem[]);
+}
 export default class LayoutState {
   public bottom: number = 0;
   public focusItem?: LayoutItem;
@@ -87,13 +96,14 @@ export default class LayoutState {
   }
 
   synchronizeLayoutWithChildren(children: JSX.Element[] | JSX.Element) {
-    const { layout, groups, focusItem } = this;
+    const { layout, groups, focusItem, activeGroup } = this;
     let focusItemVisited = false;
+    const definitionMap = {};
     const parentMap = {};
     const levelMap = {};
 
     for (const key in groups) {
-      if (groups.hasOwnProperty(key)) {
+      if (groups.hasOwnProperty(key) && groups[key].id !== temporaryGroupId) {
         const g: Group = groups[key];
         g.id = g.id || key;
         g.layout.forEach(i => parentMap[i.i] = key);
@@ -117,12 +127,12 @@ export default class LayoutState {
       if (definition.parent && !parentMap.hasOwnProperty(definition.parent)) {
         delete definition.parent;
       }
+      definitionMap[definition.i] = { definition, child };
 
       const z = Number(definition.z || defaultLevel);
       if (!levelMap[z]) {
         levelMap[z] = { items: [], groups: [], };
       }
-      levelMap[z].items.push({ definition, child });
 
       if (parentMap.hasOwnProperty(definition.i)) {
         const parentId = parentMap[definition.i];
@@ -131,6 +141,10 @@ export default class LayoutState {
         if (z !== defaultLevel) {
           groups[parentId].level.push(z);
         }
+      }
+
+      if (!definition.parent) {
+        levelMap[z].items.push({ definition, child });
       }
 
       const item = layout[index];
@@ -146,13 +160,35 @@ export default class LayoutState {
         if (!levelMap[level]) {
           levelMap[level] = { items: [], groups: [], };
         }
-        levelMap[level].groups.push(groups[key]);
+        levelMap[level].groups.push(group);
+
+        for (let i = 0; i < group.layout.length; i++) {
+          const layoutId = group.layout[i].i;
+          if (definitionMap.hasOwnProperty(layoutId)) {
+            levelMap[level].items.push(definitionMap[layoutId]);
+          }
+        }
+      }
+    }
+
+    if (activeGroup) {
+      activeGroup.layout = recoverFromMap(activeGroup.layout, activeGroup.id, definitionMap);
+      if (!activeGroup.layout.length || activeGroup.layout.length === 0) {
+        this.activeGroup = undefined;
+      }
+    }
+
+    if (groups[temporaryGroupId]) {
+      groups[temporaryGroupId].layout = recoverFromMap(groups[temporaryGroupId].layout, temporaryGroupId, definitionMap);
+      if (!groups[temporaryGroupId].layout.length || groups[temporaryGroupId].layout.length === 0) {
+        delete groups[temporaryGroupId];
       }
     }
 
     this.focusItem = focusItemVisited ? focusItem : undefined;
     this.bottom = getBottom(layout);
     this.levelMap = levelMap;
+    this.groups = groups;
 
     this.synchronized = true;
     return this;
@@ -196,7 +232,11 @@ export default class LayoutState {
       return this;
     }
 
-    if (moveWithParent && l.parent && focusItem && l.parent === focusItem.i) {
+    if (!focusItem) {
+      return this;
+    }
+
+    if (moveWithParent && l.parent && l.parent === focusItem.i) {
       // const elementToMove
       const container = this.getGroup(l.parent);
       if (!container) {
@@ -204,7 +244,7 @@ export default class LayoutState {
         return this;
       }
       const moved = container.layout;
-      moved.forEach(item => {
+      container.layout.forEach(item => {
         moveElement(
           moved,
           item,
@@ -236,6 +276,8 @@ export default class LayoutState {
         h: rect.bottom - rect.y,
         i: focusItem.i,
       };
+
+      container.rect = getBoundingRectFromLayout(container.layout);
     } else {
       this.placeholder = {
         w: l.w,
@@ -245,6 +287,14 @@ export default class LayoutState {
         placeholder: true,
         i,
         z: TOP
+      };
+
+      this.focusItem = {
+        ...(this.focusItem as LayoutItem),
+        w: l.w,
+        h: l.h,
+        x: l.x,
+        y: l.y,
       };
 
       moveElement(
@@ -372,7 +422,6 @@ export default class LayoutState {
     return this;
   }
 
-  //
   endDrag() {
     this.oldDragItem = undefined;
     this.activeDrag = undefined;

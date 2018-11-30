@@ -18,11 +18,6 @@ export default class DisposableComponent<P = {}, S = {}, SS = {}> extends Compon
     this.disposables.length = 0;
   }
 
-  protected getThisNode(): HTMLElement {
-    const thisNode = findDOMNode(this);
-    return thisNode && thisNode.ownerDocument && thisNode.ownerDocument.body || document.body;
-  }
-
   protected getOwnerDocument(): Document {
     const thisNode = findDOMNode(this);
     return thisNode && thisNode.ownerDocument && thisNode.ownerDocument || document;

@@ -25,7 +25,7 @@ export function generateLayout() {
 export function generateDOM(layouts: any[]) {
   return _.map(layouts, (l, i) => {
     return (
-      <div key={l.i || i} className={l.static ? 'react-grid-item static' : 'react-grid-item'}>
+      <div key={l.i || i} id={l.i} className={l.static ? 'react-grid-item static' : 'react-grid-item'}>
         {l.static ?
           <span className="text" title="This item is static and cannot be removed or resized.">Static - {i}</span>
           : <span className="text">{i}</span>

@@ -1,38 +1,23 @@
 
 import React from 'react';
-import { mount } from 'enzyme';
+import { mount, ReactWrapper } from 'enzyme';
 import Layout, { IGridLayoutState } from '../Layout';
-import { generateGroup, generateDOM, generateLayout, selectRange, mouseUp } from '../../../test/testUtils';
-import { groupLayout } from '../../utils';
-
-const layout = generateLayout();
+import { selectRange, mouseUp, generateDOM } from '../../../test/testUtils';
+import { groupLayout, splitGroup } from '../../utils';
 
 describe('Group', () => {
-  test('Layout with Group', () => {
-    const group = generateGroup(layout);
-    const wrapper = mount(<Layout
-      layout={layout}
-      group={group}
-      width={1024}
-      grid={[8, 8]}
-    >
-      {generateDOM(layout)}
-    </Layout>)
+  let wrapper: ReactWrapper;
+  let layoutChangeFn = jest.fn();
+  let layoutSelectFn = jest.fn();
 
-    expect(wrapper);
-    const state = wrapper.state() as IGridLayoutState;
-    expect(state.layoutState.groups).toEqual(group);
-    expect(state.layoutState.layout.every(i => !!i.parent));
-  });
-
-  test('Custom group element', () => {
-    const group = {
-      'a+b': {
-        id: 'a+b',
-        layout: [{ i: 'a'}, { i: 'b'}]
-      },
-    };
-    const wrapper = mount(<Layout
+  const group = {
+    'a+b': {
+      id: 'a+b',
+      layout: [{ i: 'a'}, { i: 'b'}]
+    },
+  };
+  beforeAll(() => {
+    wrapper = mount(<Layout
       layout={[
         { i: 'a', x: 10, y: 10, w: 10, h: 10 },
         { i: 'b', x: 25, y: 10, w: 10, h: 10 },
@@ -41,16 +26,37 @@ describe('Group', () => {
       width={1024}
       grid={[10, 10]}
       groupElement={<div className="custom-group" />}
+      onLayoutChange={layoutChangeFn}
+      onLayoutSelect={layoutSelectFn}
     >
       <div key="a" id="a">hello world</div>
       <div key="b" id="b">hello world</div>
     </Layout>);
+  });
 
+  test('Layout with group', () => {
     expect(wrapper);
     const state = wrapper.state() as IGridLayoutState;
     expect(state.layoutState.groups).toEqual(group);
     expect(state.layoutState.layout.every(i => !!i.parent));
+  });
+
+  test('Custom group element', () => {
     expect(wrapper.find('.custom-group').length).toEqual(1);
+  });
+
+  test('Group Action: select and split group', () => {
+    const a = wrapper.find('#a');
+    a.simulate('mousedown', { button: 0 });
+    wrapper.update();
+    expect(layoutSelectFn).toHaveBeenCalled();
+    const selectedGroup = layoutSelectFn.mock.calls[0][1];
+    expect(layoutSelectFn.mock.calls[0][0][0].i).toEqual('a+b');
+    expect(layoutSelectFn.mock.calls[0][1].id).toEqual('a+b');
+
+    expect(
+      splitGroup(selectedGroup.layout).every(i => !!i.parent)
+    );
   });
 
   test('GroupAction: create group', () => {
@@ -144,5 +150,124 @@ describe('Group', () => {
 
     groupEle.simulate('mousedown', { button: 0 });
     expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toEqual({ i: 'a+b', w: 25, x: 10, y: 10, h: 10,});
+  });
+
+  test.only('Group: merge group', () => {
+    const layout = [
+      { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+      { i: 'b', x: 25, y: 10, w: 10, h: 10 },
+      { i: 'c', x: 40, y: 10, w: 10, h: 10 },
+    ];
+    class App extends React.Component {
+      state = {
+        group: {
+          'a+b': {
+            id: 'a+b',
+            layout: [{ i: 'a'}, { i: 'b'}]
+          },
+        }
+      }
+      groupLayout = () => {
+        this.setState({
+          group: {
+            'a+b': {
+              id: 'a+b',
+              layout: [{ i: 'a'}, { i: 'b'}, { i: 'c'}]
+            },
+          }
+        });
+      }
+      render() {
+        return <Layout
+          layout={layout}
+          group={this.state.group}
+          grid={[ 10, 10 ]}
+          width={1024}
+          useTransform={false}
+        >
+          {generateDOM(layout)}
+        </Layout>
+      }
+    }
+
+    const wrapper = mount(<App />);
+    expect(wrapper);
+
+    const eventTarget =  wrapper.find('.react-grid-layout-selection-wrapper').at(0);
+    selectRange(eventTarget, { x: 0, y: 0}, { x: 500, y: 100 });
+    wrapper.update();
+    const state = wrapper.find(Layout).state() as IGridLayoutState;
+
+    expect(state.selectedLayout).toHaveLength(3);
+
+    (wrapper.instance() as any).groupLayout();
+    wrapper.update();
+
+    const layoutState = (wrapper.find(Layout).state() as IGridLayoutState).layoutState;
+    expect(layoutState.groups['a+b'].layout).toHaveLength(3);
+  });
+
+  test('Group: delete item from group', () => {
+      const selectFn = jest.fn();
+      class App extends React.Component {
+        state = {
+          layout: [
+            { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+            { i: 'b', x: 25, y: 10, w: 10, h: 10 },
+            { i: 'c', x: 40, y: 10, w: 10, h: 10 },
+          ],
+          group: {
+            'a+b': {
+              id: 'a+b',
+              layout: [{ i: 'a'}, { i: 'b'}, { i: 'c' }]
+            },
+          }
+        }
+        deleteItem = () => {
+          this.setState({
+            layout: this.state.layout.filter(i => i.i !== 'a'),
+          });
+        }
+        render() {
+          return <Layout
+            layout={this.state.layout}
+            group={this.state.group}
+            grid={[ 10, 10 ]}
+            width={1024}
+            useTransform={false}
+            onLayoutSelect={selectFn}
+          >
+            {generateDOM(this.state.layout)}
+          </Layout>
+        }
+      }
+
+      const wrapper = mount(<App />);
+      expect(wrapper);
+
+      const handler = wrapper.find('#a');
+      handler.simulate('mousedown', { button: 0 });
+      wrapper.update();
+
+      expect(selectFn).toBeCalled();
+
+      (wrapper.instance() as any).deleteItem();
+      wrapper.update();
+
+      expect((wrapper.state() as any).layout).toEqual([
+        {"h": 10, "i": "b", "parent": "a+b", "w": 10, "x": 25, "y": 10},
+        {"h": 10, "i": "c", "parent": "a+b", "w": 10, "x": 40, "y": 10}
+      ]);
+      const layoutRef = wrapper.find(Layout);
+
+      expect(layoutRef);
+
+      const state = layoutRef.state();
+      const layoutState = state.layoutState;
+
+      expect(layoutState.groups['a+b'].layout).toEqual([
+        {"h": 10, "i": "b", "parent": "a+b", "w": 10, "x": 25, "y": 10},
+        {"h": 10, "i": "c", "parent": "a+b", "w": 10, "x": 40, "y": 10}
+      ]);
   });
 });

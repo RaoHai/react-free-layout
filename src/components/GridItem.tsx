@@ -2,11 +2,12 @@ import React, { Component, MouseEventHandler } from 'react';
 import Draggable, { DraggableData, DraggerEvent } from './Dragger';
 import { setTransform, getOffsetParent, OffsetParent, classNames, offsetXYFromParent, canUseDOM } from '../utils';
 import { LayoutItem } from '../model/LayoutState';
+import { temporaryGroupId } from './Layout';
 
 export interface GridDragEvent {
   e: DraggerEvent;
   node: DraggableData['node'];
-  newPosition: { x: number; y: number, };
+  newPosition: { left: number; top: number, };
   dx: number;
   dy: number;
 }
@@ -28,7 +29,7 @@ export interface Position {
 }
 
 export type GridDragCallback = (
-  i: string,
+  i: string | symbol,
   x: number,
   y: number,
   event: GridDragEvent,
@@ -45,6 +46,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
   {
     offsetParent?: OffsetParent;
     className?: string;
+    offsets: number[];
     cols: number;
     scale: number;
     maxRows: number;
@@ -61,6 +63,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
     selected?: boolean;
     useTransform: boolean;
     inGroup?: boolean;
+    parent?: LayoutItem['parent'];
     onContextMenu?: MouseEventHandler;
   };
 
@@ -80,6 +83,7 @@ export default class GridItem extends Component<GridItemProps, {
     handle: "",
     scale: 1,
     useTransform: true,
+    offsets: [0, 0, 0, 0],
   }
 
   constructor(props: GridItem['props']) {
@@ -96,19 +100,17 @@ export default class GridItem extends Component<GridItemProps, {
   }
 
   componentDidMount() {
-    if (!this.state.mounted) {
-      this.setState({ mounted: true });
-    }
+    this.setState({ mounted: true });
   }
+
   calcXY(top: number, left: number, suppliter = Math.round): { x: number, y: number } {
-    const { margin, cols, colWidth, rowHeight, w, h, maxRows } = this.props;
+    const { margin, cols, colWidth, rowHeight, w, h, maxRows, offsets } = this.props;
 
     let x = suppliter((left - margin[0]) / (colWidth + margin[0]));
     let y = suppliter((top - margin[1]) / (rowHeight + margin[1]));
-
     // Capping
-    x = Math.max(Math.min(x, cols - w), 0);
-    y = Math.max(Math.min(y, maxRows - h), 0);
+    x = Math.max(Math.min(x, cols - offsets[1] - w), offsets[3]);
+    y = Math.max(Math.min(y, maxRows - offsets[2] - h), offsets[0]);
 
     return { x, y };
   }
@@ -122,7 +124,6 @@ export default class GridItem extends Component<GridItemProps, {
 
       const newPosition = { top: 0, left: 0 };
       const { dragging } = this.state;
-
       switch (handlerName) {
         case 'onDragStart':
           const clientRect = node.getBoundingClientRect();
@@ -188,7 +189,7 @@ export default class GridItem extends Component<GridItemProps, {
     const {
       margin, colWidth, containerPadding, rowHeight, isDraggable = true,
       x, y, w, h, scale, inGroup,
-      children, className, style, active, selected, onContextMenu, useTransform,
+      parent, children, className, style, active, selected, onContextMenu, useTransform,
     } = this.props;
 
     const out = {
@@ -197,14 +198,8 @@ export default class GridItem extends Component<GridItemProps, {
       // 0 * Infinity === NaN, which causes problems with resize constraints;
       // Fix this if it occurs.
       // Note we do it here rather than later because Math.round(Infinity) causes deopt
-      width:
-        w === Infinity
-          ? w
-          : Math.round(colWidth * w + Math.max(0, w - 1) * margin[0]) * scale,
-      height:
-        h === Infinity
-          ? h
-          : Math.round(rowHeight * h + Math.max(0, h - 1) * margin[1]) * scale,
+      width: Math.round(colWidth * w + Math.max(0, w - 1) * margin[0]) * scale,
+      height: Math.round(rowHeight * h + Math.max(0, h - 1) * margin[1]) * scale,
     };
 
     const child = React.Children.only(children);
@@ -221,10 +216,13 @@ export default class GridItem extends Component<GridItemProps, {
           active: Boolean(active),
           selected: Boolean(selected),
           "in-group": Boolean(inGroup),
+          "in-temporary-group": parent === temporaryGroupId
         },
       ),
       // We can set the width and height on the child, but unfortunately we can't set the position.
       style: {
+        left: 0,
+        top: 0,
         ...style,
         ...child.props.style,
         ...setTransform(out, useTransform),
