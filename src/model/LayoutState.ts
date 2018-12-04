@@ -8,6 +8,7 @@ import {
   GridRect,
   autoFit,
 } from '../utils';
+import { temporaryGroupId } from '../components/Layout';
 
 export type StretchOptions = 'none' | 'x' | 'y' | 'both';
 export interface LayoutItem {
@@ -87,14 +88,14 @@ export default class LayoutState {
   }
 
   synchronizeLayoutWithChildren(children: JSX.Element[] | JSX.Element) {
-    const { layout, groups, focusItem } = this;
+    const { layout, groups, focusItem, activeGroup } = this;
     let focusItemVisited = false;
     const definitionMap = {};
     const parentMap = {};
     const levelMap = {};
 
     for (const key in groups) {
-      if (groups.hasOwnProperty(key)) {
+      if (groups.hasOwnProperty(key) && groups[key].id !== temporaryGroupId) {
         const g: Group = groups[key];
         g.id = g.id || key;
         g.layout.forEach(i => parentMap[i.i] = key);
@@ -162,6 +163,18 @@ export default class LayoutState {
       }
     }
 
+    if (activeGroup) {
+      activeGroup.layout = activeGroup.layout.reduce((prev, curr) => {
+        if (definitionMap.hasOwnProperty(curr.i) && definitionMap[curr.i].parent === activeGroup.id) {
+          return prev.concat([ definitionMap[curr.i] ]);
+        }
+        return prev;
+      }, [] as LayoutItem[]);
+      if (!activeGroup.layout.length || activeGroup.layout.length === 0) {
+        this.activeGroup = undefined;
+      }
+    }
+
     this.focusItem = focusItemVisited ? focusItem : undefined;
     this.bottom = getBottom(layout);
     this.levelMap = levelMap;
@@ -216,7 +229,7 @@ export default class LayoutState {
         return this;
       }
       const moved = container.layout;
-      moved.forEach(item => {
+      container.layout.forEach(item => {
         moveElement(
           moved,
           item,
@@ -248,6 +261,8 @@ export default class LayoutState {
         h: rect.bottom - rect.y,
         i: focusItem.i,
       };
+
+      container.rect = getBoundingRectFromLayout(container.layout);
     } else {
       this.placeholder = {
         w: l.w,

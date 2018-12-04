@@ -54,7 +54,8 @@ storiesOf("Basic Usage", module)
   ).add('layout with scale', () => <Layout
     {...dragActions}
     layout={layout}
-    width={1024}
+    style={{ margin: '0 auto' }}
+    width={600}
     grid={[8, 8]}
   >
     {generateDOM(layout)}

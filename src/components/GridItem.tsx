@@ -46,6 +46,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
   {
     offsetParent?: OffsetParent;
     className?: string;
+    offsets: number[];
     cols: number;
     scale: number;
     maxRows: number;
@@ -82,6 +83,7 @@ export default class GridItem extends Component<GridItemProps, {
     handle: "",
     scale: 1,
     useTransform: true,
+    offsets: [0, 0, 0, 0],
   }
 
   constructor(props: GridItem['props']) {
@@ -102,15 +104,16 @@ export default class GridItem extends Component<GridItemProps, {
       this.setState({ mounted: true });
     }
   }
+
   calcXY(top: number, left: number, suppliter = Math.round): { x: number, y: number } {
-    const { margin, cols, colWidth, rowHeight, w, h, maxRows } = this.props;
+    const { margin, cols, colWidth, rowHeight, w, h, maxRows, offsets } = this.props;
 
     let x = suppliter((left - margin[0]) / (colWidth + margin[0]));
     let y = suppliter((top - margin[1]) / (rowHeight + margin[1]));
 
     // Capping
-    x = Math.max(Math.min(x, cols - w), 0);
-    y = Math.max(Math.min(y, maxRows - h), 0);
+    x = Math.max(Math.min(x, cols - offsets[1] - w), offsets[3]);
+    y = Math.max(Math.min(y, maxRows - offsets[2] - h), offsets[0]);
 
     return { x, y };
   }

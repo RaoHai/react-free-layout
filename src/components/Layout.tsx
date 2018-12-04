@@ -150,10 +150,13 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       !isEqual(nextProps.group, this.props.group)
     ) {
       const { layout, children, group, width, grid, containerPadding } = nextProps;
+      // const prevActiveGroup = this.state.layoutState.activeGroup;
+      const synchronizedState = this.state.layoutState
+        .update(layout, group, getCols({ width, grid }))
+        .synchronizeLayoutWithChildren(children);
+
       this.setState({
-        layoutState: this.state.layoutState
-          .update(layout, group, getCols({ width, grid }))
-          .synchronizeLayoutWithChildren(children),
+        layoutState: synchronizedState,
         colWidth: calcColWidth(width, grid, containerPadding),
       });
     }
@@ -270,11 +273,16 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       layoutState.layout.filter(layoutItem => layoutItem.parent && layoutItem.parent === activeGroup.id)
     );
 
+    const { maxRows } = this.props;
+    const cols = getCols(this.props);
+    const x = Math.max(Math.min(rect.x, cols - rect.width), 0);
+    const y = Math.max(Math.min(rect.y, maxRows - rect.height), 0);
+
+    // const
     const focusItem = {
-      x: rect.x,
-      y: rect.y,
-      w: rect.right - rect.x,
-      h: rect.bottom - rect.y,
+      x, y,
+      w: rect.right - x,
+      h: rect.bottom - y,
       i: activeGroup.id
     };
     persist(e);
@@ -517,6 +525,18 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     const selected = Boolean(selectedLayout && selectedLayout.find(item => item.i === String(key)));
     const inGroup = !!l.parent;
 
+    const { activeGroup } = layoutState;
+    const moveWithGroup = l.parent && activeGroup && activeGroup.id === l.parent;
+
+    const offsetProps = activeGroup && activeGroup.rect && moveWithGroup ? {
+      offsets: [
+        l.y - activeGroup.rect.y,
+        activeGroup.rect.right - (l.x + l.w),
+        activeGroup.rect.height - (l.y + l.h),
+        l.x - activeGroup.rect.x,
+      ],
+    } : {};
+
     return this.createGridItem(l, {
       onDragStop: this.onDragStop,
       onDragStart: this.onDragStart,
@@ -527,6 +547,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       active,
       selected,
       inGroup,
+      ...offsetProps,
     });
   }
 
@@ -566,6 +587,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     const { width, containerPadding, maxRows, useTransform } = this.props;
     const cols = getCols(this.props);
     const { colWidth } = this.state;
+
     return <GridItem
       {...extProps}
       key={String(activeDrag.i)}
