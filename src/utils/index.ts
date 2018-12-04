@@ -507,13 +507,14 @@ export function calcPosition(
   w: number,
   h: number,
   colWidth: number,
+  rowHeight: number,
   containerPadding: [number, number],
   scale: number = 1,
 ) {
 
   const out = {
     left: Math.round(colWidth * x + containerPadding[0]) * scale,
-    top: Math.round(colWidth * y + containerPadding[1]) * scale,
+    top: Math.round(rowHeight * y + containerPadding[1]) * scale,
     // 0 * Infinity === NaN, which causes problems with resize constraints;
     // Fix this if it occurs.
     // Note we do it here rather than later because Math.round(Infinity) causes deopt
@@ -524,7 +525,7 @@ export function calcPosition(
     height:
       h === Infinity
         ? h
-        : Math.round(colWidth * h) * scale,
+        : Math.round(rowHeight * h) * scale,
   };
 
   return out;

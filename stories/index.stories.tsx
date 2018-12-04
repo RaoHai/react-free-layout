@@ -56,7 +56,7 @@ storiesOf("Basic Usage", module)
     layout={layout}
     style={{ margin: '0 auto' }}
     width={600}
-    grid={[8, 8]}
+    grid={[10, 5]}
   >
     {generateDOM(layout)}
   </Layout>);
