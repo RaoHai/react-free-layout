@@ -141,9 +141,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   componentDidMount() {
-    if (!this.state.mounted) {
-      this.setState({ mounted: true });
-    }
+    this.setState({ mounted: true });
   }
 
   componentWillReceiveProps(nextProps: IGridLayoutProps) {

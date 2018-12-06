@@ -518,14 +518,8 @@ export function calcPosition(
     // 0 * Infinity === NaN, which causes problems with resize constraints;
     // Fix this if it occurs.
     // Note we do it here rather than later because Math.round(Infinity) causes deopt
-    width:
-      w === Infinity
-        ? w
-        : Math.round(colWidth * w) * scale,
-    height:
-      h === Infinity
-        ? h
-        : Math.round(rowHeight * h) * scale,
+    width: Math.round(colWidth * w) * scale,
+    height: Math.round(rowHeight * h) * scale,
   };
 
   return out;

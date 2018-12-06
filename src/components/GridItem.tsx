@@ -100,9 +100,7 @@ export default class GridItem extends Component<GridItemProps, {
   }
 
   componentDidMount() {
-    if (!this.state.mounted) {
-      this.setState({ mounted: true });
-    }
+    this.setState({ mounted: true });
   }
 
   calcXY(top: number, left: number, suppliter = Math.round): { x: number, y: number } {
@@ -202,14 +200,8 @@ export default class GridItem extends Component<GridItemProps, {
       // 0 * Infinity === NaN, which causes problems with resize constraints;
       // Fix this if it occurs.
       // Note we do it here rather than later because Math.round(Infinity) causes deopt
-      width:
-        w === Infinity
-          ? w
-          : Math.round(colWidth * w + Math.max(0, w - 1) * margin[0]) * scale,
-      height:
-        h === Infinity
-          ? h
-          : Math.round(rowHeight * h + Math.max(0, h - 1) * margin[1]) * scale,
+      width: Math.round(colWidth * w + Math.max(0, w - 1) * margin[0]) * scale,
+      height: Math.round(rowHeight * h + Math.max(0, h - 1) * margin[1]) * scale,
     };
 
     const child = React.Children.only(children);

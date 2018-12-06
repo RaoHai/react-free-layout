@@ -3,6 +3,7 @@ import { mount } from 'enzyme';
 import Layout, { IGridLayoutState } from '../Layout';
 import { handles } from '../Resizer/index';
 import { mouseMove, mouseUp } from '../../../test/testUtils';
+import ResizeHelper from '../Resizer/helper';
 
 describe('Resizer', () => {
   test('resize simple layout', () => {
@@ -41,6 +42,42 @@ describe('Resizer', () => {
     wrapper.simulate('mousedown', { button: 0, clientX: 10, clientY: 10 });
     expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toBeFalsy();
     expect((wrapper.instance() as Layout).onResize('a', {} as any, {} as any)).toBeUndefined();
+  });
+
+  test('width resize helper', () => {
+    const resizeStart = jest.fn();
+    const resize = jest.fn();
+    const resizeStop = jest.fn();
+
+    const wrapper = mount(<Layout
+      layout={[
+        { i: 'a', x: 0, y: 0, w: 10, h: 10, minW: 10, minH: 10, maxH: 15, maxW: 15 },
+        { i: 'b', x: 15, y: 15, w: 10, h: 10 }
+      ]}
+      width={1024}
+      grid={[10, 10]}
+      onResizeStart={resizeStart}
+      onResize={resize}
+      onResizeStop={resizeStop}
+      minConstraints={[ 5, 5 ]}
+      maxConstraints={[ 20, 20 ]}
+      resizeHelper
+    >
+      <div key="a" id="handler">hello world</div>
+      <div key="b" id="anotherHandler">hello world</div>
+    </Layout>);
+
+    expect(wrapper);
+
+    const handler = wrapper.find('#handler');
+    handler.simulate('mousedown', { button: 0});
+
+    const resizer = wrapper.findWhere(wrapper => wrapper.key() === `resizableHandle-br`);
+    expect(resizer);
+    resizer.simulate('mousedown', { button: 0, clientX: 100, clientY: 100 });
+
+    wrapper.update();
+    expect(wrapper.find(ResizeHelper)).not.toBeNull();
   });
 
   test('resize with constraints', () => {

@@ -165,8 +165,8 @@ export default class LayoutState {
 
     if (activeGroup) {
       activeGroup.layout = activeGroup.layout.reduce((prev, curr) => {
-        if (definitionMap.hasOwnProperty(curr.i) && definitionMap[curr.i].parent === activeGroup.id) {
-          return prev.concat([ definitionMap[curr.i] ]);
+        if (definitionMap.hasOwnProperty(curr.i) && definitionMap[curr.i].definition.parent === activeGroup.id) {
+          return prev.concat([ definitionMap[curr.i].definition]);
         }
         return prev;
       }, [] as LayoutItem[]);
@@ -178,6 +178,7 @@ export default class LayoutState {
     this.focusItem = focusItemVisited ? focusItem : undefined;
     this.bottom = getBottom(layout);
     this.levelMap = levelMap;
+    this.groups = groups;
 
     this.synchronized = true;
     return this;
