@@ -65,6 +65,14 @@ export type LayoutChildren = GroupChild | LayoutChild;
 export const defaultLevel = -Infinity;
 export const TOP = 999;
 
+function recoverFromMap(layout: LayoutItem[], parentId: Group['id'], definitionMap: {}) {
+  return layout.reduce((prev, curr) => {
+    if (definitionMap.hasOwnProperty(curr.i) && definitionMap[curr.i].definition.parent === parentId) {
+      return prev.concat([ definitionMap[curr.i].definition]);
+    }
+    return prev;
+  }, [] as LayoutItem[]);
+}
 export default class LayoutState {
   public bottom: number = 0;
   public focusItem?: LayoutItem;
@@ -164,14 +172,16 @@ export default class LayoutState {
     }
 
     if (activeGroup) {
-      activeGroup.layout = activeGroup.layout.reduce((prev, curr) => {
-        if (definitionMap.hasOwnProperty(curr.i) && definitionMap[curr.i].definition.parent === activeGroup.id) {
-          return prev.concat([ definitionMap[curr.i].definition]);
-        }
-        return prev;
-      }, [] as LayoutItem[]);
+      activeGroup.layout = recoverFromMap(activeGroup.layout, activeGroup.id, definitionMap);
       if (!activeGroup.layout.length || activeGroup.layout.length === 0) {
         this.activeGroup = undefined;
+      }
+    }
+
+    if (groups[temporaryGroupId]) {
+      groups[temporaryGroupId].layout = recoverFromMap(groups[temporaryGroupId].layout, temporaryGroupId, definitionMap);
+      if (!groups[temporaryGroupId].layout.length || groups[temporaryGroupId].layout.length === 0) {
+        delete groups[temporaryGroupId];
       }
     }
 

@@ -4,7 +4,6 @@ import { mount, ReactWrapper } from 'enzyme';
 import Layout, { IGridLayoutState } from '../Layout';
 import { selectRange, mouseUp, generateDOM } from '../../../test/testUtils';
 import { groupLayout, splitGroup } from '../../utils';
-import toJson from 'enzyme-to-json';
 
 describe('Group', () => {
   let wrapper: ReactWrapper;
@@ -153,6 +152,60 @@ describe('Group', () => {
     expect((wrapper.state() as IGridLayoutState).layoutState.focusItem).toEqual({ i: 'a+b', w: 25, x: 10, y: 10, h: 10,});
   });
 
+  test.only('Group: merge group', () => {
+    const layout = [
+      { i: 'a', x: 10, y: 10, w: 10, h: 10 },
+      { i: 'b', x: 25, y: 10, w: 10, h: 10 },
+      { i: 'c', x: 40, y: 10, w: 10, h: 10 },
+    ];
+    class App extends React.Component {
+      state = {
+        group: {
+          'a+b': {
+            id: 'a+b',
+            layout: [{ i: 'a'}, { i: 'b'}]
+          },
+        }
+      }
+      groupLayout = () => {
+        this.setState({
+          group: {
+            'a+b': {
+              id: 'a+b',
+              layout: [{ i: 'a'}, { i: 'b'}, { i: 'c'}]
+            },
+          }
+        });
+      }
+      render() {
+        return <Layout
+          layout={layout}
+          group={this.state.group}
+          grid={[ 10, 10 ]}
+          width={1024}
+          useTransform={false}
+        >
+          {generateDOM(layout)}
+        </Layout>
+      }
+    }
+
+    const wrapper = mount(<App />);
+    expect(wrapper);
+
+    const eventTarget =  wrapper.find('.react-grid-layout-selection-wrapper').at(0);
+    selectRange(eventTarget, { x: 0, y: 0}, { x: 500, y: 100 });
+    wrapper.update();
+    const state = wrapper.find(Layout).state() as IGridLayoutState;
+
+    expect(state.selectedLayout).toHaveLength(3);
+
+    (wrapper.instance() as any).groupLayout();
+    wrapper.update();
+
+    const layoutState = (wrapper.find(Layout).state() as IGridLayoutState).layoutState;
+    expect(layoutState.groups['a+b'].layout).toHaveLength(3);
+  });
 
   test('Group: delete item from group', () => {
       const selectFn = jest.fn();
