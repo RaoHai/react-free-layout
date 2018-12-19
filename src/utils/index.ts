@@ -534,6 +534,197 @@ export function getCols({ width, grid }: Pick<IGridLayoutProps, 'width' | 'grid'
   return Math.ceil(width / grid[0]);
 }
 
+export type CompactType = 'vertical' | 'horizontal';
+
+function getStatics(layout: Layout): LayoutItem[] {
+  return layout.filter(l => l.static);
+}
+
+export function sortLayoutItems(
+  layout: Layout,
+  compactType: CompactType
+): Layout {
+  if (compactType === "horizontal") {
+    return sortLayoutItemsByColRow(layout);
+  }
+  return sortLayoutItemsByRowCol(layout);
+}
+
+export function sortLayoutItemsByRowCol(layout: Layout): Layout {
+  return ([] as Layout).concat(layout).sort((a, b) => {
+    if (a.y > b.y || (a.y === b.y && a.x > b.x)) {
+      return 1;
+    } else if (a.y === b.y && a.x === b.x) {
+      // Without this, we can get different sort results in IE vs. Chrome/FF
+      return 0;
+    }
+    return -1;
+  });
+}
+
+export function sortLayoutItemsByColRow(layout: Layout): Layout {
+  return ([] as Layout).concat(layout).sort((a, b) => {
+    if (a.x > b.x || (a.x === b.x && a.y > b.y)) {
+      return 1;
+    }
+    return -1;
+  });
+}
+
+export function collides(l1: LayoutItem, l2: LayoutItem): boolean {
+  if (l1.i === l2.i) {
+    return false; // same element
+  }
+  if (l1.x + l1.w <= l2.x) {
+    return false; // l1 is left of l2
+  }
+  if (l1.x >= l2.x + l2.w) {
+    return false; // l1 is right of l2
+  }
+  if (l1.y + l1.h <= l2.y) {
+    return false; // l1 is above l2
+  }
+  if (l1.y >= l2.y + l2.h) {
+    return false; // l1 is below l2
+  }
+  return true; // boxes overlap
+}
+
+export function getFirstCollision(
+  layout: Layout,
+  layoutItem: LayoutItem
+): LayoutItem | undefined {
+  for (let i = 0, len = layout.length; i < len; i++) {
+    if (collides(layout[i], layoutItem)) {
+      return layout[i];
+    }
+  }
+  return;
+}
+
+const heightWidth = { x: "w", y: "h" };
+
+function resolveCompactionCollision(
+  layout: Layout,
+  item: LayoutItem,
+  moveToCoord: number,
+  axis: "x" | "y"
+) {
+  const sizeProp = heightWidth[axis];
+  item[axis] += 1;
+  const itemIndex = layout
+    .map(layoutItem => {
+      return layoutItem.i;
+    })
+    .indexOf(item.i);
+
+  // Go through each item we collide with.
+  for (let i = itemIndex + 1; i < layout.length; i++) {
+    const otherItem = layout[i];
+    // Ignore static items
+    if (otherItem.static) {
+      continue;
+    }
+
+    // Optimization: we can break early if we know we're past this el
+    // We can do this b/c it's a sorted layout
+    if (otherItem.y > (item.y + item.h)) {
+      break;
+    }
+
+    if (collides(item, otherItem)) {
+      resolveCompactionCollision(
+        layout,
+        otherItem,
+        moveToCoord + item[sizeProp],
+        axis
+      );
+    }
+  }
+
+  item[axis] = moveToCoord;
+}
+
+export function compactItem(
+  compareWith: Layout,
+  l: LayoutItem,
+  compactType: CompactType,
+  cols: number,
+  fullLayout: Layout,
+  containerPadding = [0, 0]
+): LayoutItem {
+  const compactV = compactType === "vertical";
+  const compactH = compactType === "horizontal";
+  if (compactV) {
+    // Bottom 'y' possible is the bottom of the layout.
+    // This allows you to do nice stuff like specify {y: Infinity}
+    // This is here because the layout must be sorted in order to get the correct bottom `y`.
+    l.y = Math.min(getBottom(compareWith), l.y);
+    // Move the element up as far as it can go without colliding.
+    while (l.y > 0 && !getFirstCollision(compareWith, l)) {
+      l.y--;
+    }
+  } else if (compactH) {
+    l.y = Math.min(getBottom(compareWith), l.y);
+    // Move the element left as far as it can go without colliding.
+    while (l.x > 0 && !getFirstCollision(compareWith, l)) {
+      l.x--;
+    }
+  }
+
+  // Move it down, and keep moving it down if it's colliding.
+  let collide;
+  // tslint:disable-next-line
+  while ((collide = getFirstCollision(compareWith, l))) {
+    if (compactH) {
+      resolveCompactionCollision(fullLayout, l, collide.x + collide.w + containerPadding[0], "x");
+    } else {
+      resolveCompactionCollision(fullLayout, l, collide.y + collide.h + containerPadding[1], "y");
+    }
+    // Since we can't grow without bounds horizontally, if we've overflown, let's move it down and try again.
+    if (compactH && l.x + l.w > cols) {
+      l.x = cols - l.w;
+      l.y++;
+    }
+  }
+  return l;
+}
+
+export function compact(
+  layout: Layout,
+  compactType: CompactType,
+  cols: number,
+  containerPadding = [0, 0]
+): Layout {
+  // Statics go in the compareWith array right away so items flow around them.
+  const compareWith = getStatics(layout);
+  // We go through the items by row and column.
+  const sorted = sortLayoutItems(layout, compactType);
+  // Holding for new items.
+  const out = Array(layout.length);
+
+  for (let i = 0, len = sorted.length; i < len; i++) {
+    let l = cloneLayoutItem(sorted[i]);
+
+    // Don't move static elements
+    if (!l.static) {
+      l = compactItem(compareWith, l, compactType, cols, sorted, containerPadding);
+
+      // Add to comparison array. We only collide with items before this one.
+      // Statics are already in this array.
+      compareWith.push(l);
+    }
+
+    // Add to output array to make sure they still come out in the right order.
+    out[layout.indexOf(sorted[i])] = l;
+
+    // Clear moved flag, if it exists.
+    l.moved = false;
+  }
+
+  return out;
+}
+
 export function calcColWidth(
   width: number,
   grid: IGridLayoutProps['grid'],
@@ -564,6 +755,7 @@ export function layoutlize(layout: Layout, cols: number, unitHeight?: number) {
     h: Math.round(i.h * h),
   }));
 }
+
 
 export function changeItemLevel(item: LayoutItem, fn: (z: number) => number) {
   return {

@@ -1,6 +1,6 @@
 {
   "name": "@alipay/deer-free-layout",
-  "version": "1.1.26",
+  "version": "1.1.31",
   "description": "A draggable and resizable free layout for React.",
   "repository": {
     "type": "git",
@@ -18,9 +18,11 @@
     "free"
   ],
   "main": "lib/index.js",
+  "browser": "es/index.js",
   "license": "MIT",
   "files": [
-    "lib"
+    "lib",
+    "es"
   ],
   "scripts": {
     "start": "node scripts/start.js",
@@ -29,7 +31,7 @@
     "test": "node scripts/test.js --env=jsdom --verbose false",
     "coverage": "node scripts/test.js --env=jsdom --coverage",
     "storybook": "start-storybook -p 9001 -c .storybook",
-    "prepublish": "tsc -p tsconfig.prod.json"
+    "prepublish": "tsc -p tsconfig.prod.json && tsc -p tsconfig.es.json"
   },
   "devDependencies": {
     "@babel/core": "7.1.0",

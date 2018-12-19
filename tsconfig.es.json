@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "es",
+    "target": "es6",
+    "rootDir": "src",
+    "module": "es6",
+    "declaration": true
+  },
+  "exclude": [
+    "**/*.spec.tsx",
+    "test",
+    "test/setupTests.ts"
+  ]
+}
