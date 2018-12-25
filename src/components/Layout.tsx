@@ -529,7 +529,8 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     const inGroup = !!l.parent;
 
     const { activeGroup } = layoutState;
-    const moveWithGroup = l.parent && activeGroup && activeGroup.id === l.parent;
+    const moveWithGroup = l.parent && activeGroup && focusItem &&
+      activeGroup.id === focusItem.i && activeGroup.id === l.parent;
 
     const offsetProps = activeGroup && activeGroup.rect && moveWithGroup ? {
       offsets: [

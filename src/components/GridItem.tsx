@@ -108,7 +108,6 @@ export default class GridItem extends Component<GridItemProps, {
 
     let x = suppliter((left - margin[0]) / (colWidth + margin[0]));
     let y = suppliter((top - margin[1]) / (rowHeight + margin[1]));
-
     // Capping
     x = Math.max(Math.min(x, cols - offsets[1] - w), offsets[3]);
     y = Math.max(Math.min(y, maxRows - offsets[2] - h), offsets[0]);
