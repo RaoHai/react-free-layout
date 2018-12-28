@@ -124,7 +124,6 @@ export default class GridItem extends Component<GridItemProps, {
 
       const newPosition = { top: 0, left: 0 };
       const { dragging } = this.state;
-
       switch (handlerName) {
         case 'onDragStart':
           const clientRect = node.getBoundingClientRect();
@@ -222,6 +221,8 @@ export default class GridItem extends Component<GridItemProps, {
       ),
       // We can set the width and height on the child, but unfortunately we can't set the position.
       style: {
+        left: 0,
+        top: 0,
         ...style,
         ...child.props.style,
         ...setTransform(out, useTransform),

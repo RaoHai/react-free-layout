@@ -30,7 +30,7 @@
     "test": "node scripts/test.js --env=jsdom --verbose false",
     "coverage": "node scripts/test.js --env=jsdom --coverage",
     "storybook": "start-storybook -p 9001 -c .storybook",
-    "prepublish": "tsc -p tsconfig.prod.json && tsc -p tsconfig.es.json"
+    "prepublish": "tsc -p tsconfig.prod.json"
   },
   "devDependencies": {
     "@babel/core": "7.1.0",

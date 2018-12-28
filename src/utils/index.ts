@@ -91,6 +91,8 @@ export function setTransform(
   // Replace unitless items with px
   const translate = `translate(${left}px,${top}px)`;
   const transformProps = useTransform ? {
+    left: 0,
+    top: 0,
     transform: translate,
     WebkitTransform: translate,
     MozTransform: translate,

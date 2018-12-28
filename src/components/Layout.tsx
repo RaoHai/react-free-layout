@@ -67,6 +67,7 @@ const defaultProps = {
   minConstraints: [ 0, 0 ] as [ number, number ],
   maxConstraints: [ Infinity, Infinity ] as [ number, number ],
   useTransform: true,
+  layout: [],
 }
 
 
@@ -99,6 +100,7 @@ export type IGridLayoutProps = {
   group: Groups;
   className?: string;
   width: number;
+  height?: number;
   maxRows: number;
   style?: {};
   wrapperStyle?: {};
@@ -831,10 +833,11 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   }
 
   render() {
-    const { extraRender, width, wrapperStyle = {}, style } = this.props;
+    const { extraRender, width, wrapperStyle = {}, style, height } = this.props;
     const { layoutState, colWidth, mounted } = this.state;
     const { bottom } = layoutState;
 
+    const calcedHeight = (bottom + 10) * colWidth;
     return <Selection
       onSelectStart={this.startSelection}
       onSelect={this.selectLayoutItemByRect}
@@ -848,7 +851,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         style={{
           ...style,
           width,
-          height: (bottom + 10) * colWidth,
+          height: height ? Math.max(height, calcedHeight) : calcedHeight,
           position: 'relative'
         }}
       >

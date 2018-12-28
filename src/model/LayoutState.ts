@@ -232,7 +232,11 @@ export default class LayoutState {
       return this;
     }
 
-    if (moveWithParent && l.parent && focusItem && l.parent === focusItem.i) {
+    if (!focusItem) {
+      return this;
+    }
+
+    if (moveWithParent && l.parent && l.parent === focusItem.i) {
       // const elementToMove
       const container = this.getGroup(l.parent);
       if (!container) {
@@ -283,6 +287,14 @@ export default class LayoutState {
         placeholder: true,
         i,
         z: TOP
+      };
+
+      this.focusItem = {
+        ...(this.focusItem as LayoutItem),
+        w: l.w,
+        h: l.h,
+        x: l.x,
+        y: l.y,
       };
 
       moveElement(
