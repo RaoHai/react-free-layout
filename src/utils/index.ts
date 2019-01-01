@@ -86,10 +86,12 @@ export function classNames(...args: Array<string | {} | undefined>): string {
 export function setTransform(
   { top, left, width, height }: Position,
   useTransform = true,
-  z: number = 1,
+  containerWidth?: number,
 ): {} {
   // Replace unitless items with px
-  const translate = `translate(${left}px,${top}px)`;
+  const translate = containerWidth ?
+    `translate(${left / containerWidth * 100}%,${top}px)` :
+    `translate(${left}px,${top}px)`;
   const transformProps = useTransform ? {
     left: 0,
     top: 0,
@@ -103,13 +105,11 @@ export function setTransform(
     top: `${top}px`,
   };
 
-
   return {
     ...transformProps,
-    width: `${width}px`,
+    width: containerWidth ? `${width / containerWidth * 100}%` : `${width}px`,
     height: `${height}px`,
     position: "absolute",
-    zIndex: z,
   };
 }
 

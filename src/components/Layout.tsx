@@ -67,6 +67,7 @@ const defaultProps = {
   minConstraints: [ 0, 0 ] as [ number, number ],
   maxConstraints: [ Infinity, Infinity ] as [ number, number ],
   useTransform: true,
+  fluid: false,
   layout: [],
 }
 
@@ -102,6 +103,7 @@ export type IGridLayoutProps = {
   width: number;
   height?: number;
   maxRows: number;
+  fluid: boolean,
   style?: {};
   wrapperStyle?: {};
   autoSize?: boolean;
@@ -590,7 +592,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     children: ReactChild,
     extProps?: Partial<GridItem['props']>,
   ) => {
-    const { width, containerPadding, maxRows, useTransform } = this.props;
+    const { width, containerPadding, maxRows, useTransform, fluid } = this.props;
     const cols = getCols(this.props);
     const { colWidth, rowHeight } = this.state;
     return <GridItem
@@ -614,6 +616,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onContextMenu={this.onContextMenu.bind(this, activeDrag)}
       ref={this.getLayoutRefs(activeDrag.i)}
       parent={activeDrag.parent}
+      fluid={fluid}
       {...callbacks}
     >
       {children}

@@ -45,6 +45,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
   LayoutItem &
   {
     offsetParent?: OffsetParent;
+    fluid?: boolean;
     className?: string;
     offsets: number[];
     cols: number;
@@ -190,6 +191,7 @@ export default class GridItem extends Component<GridItemProps, {
       margin, colWidth, containerPadding, rowHeight, isDraggable = true,
       x, y, w, h, scale, inGroup,
       parent, children, className, style, active, selected, onContextMenu, useTransform,
+      fluid, containerWidth,
     } = this.props;
 
     const out = {
@@ -225,7 +227,7 @@ export default class GridItem extends Component<GridItemProps, {
         top: 0,
         ...style,
         ...child.props.style,
-        ...setTransform(out, useTransform),
+        ...setTransform(out, useTransform, fluid ? containerWidth : undefined),
       },
       onContextMenu,
     });
