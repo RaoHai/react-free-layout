@@ -23,6 +23,7 @@ import Selection, { MousePosition } from './Selection';
 import Resizer, { ResizeCallbacks, ResizeProps, SelectCallbacks, GridResizeCallback } from './Resizer';
 import { persist } from '../utils/events';
 import { DraggerEvent, DraggableData } from './Dragger/index';
+import { Plugin } from './Plugin/core';
 
 
 export const temporaryGroupId = Symbol('template');
@@ -68,6 +69,7 @@ const defaultProps = {
   maxConstraints: [ Infinity, Infinity ] as [ number, number ],
   useTransform: true,
   layout: [],
+  plugins: [],
 }
 
 
@@ -104,6 +106,7 @@ export type IGridLayoutProps = {
   maxRows: number;
   style?: {};
   wrapperStyle?: {};
+  plugins: Array<Plugin<any>>;
   autoSize?: boolean;
   useTransform?: boolean;
   activeDrag?: LayoutItem;
@@ -126,13 +129,17 @@ export type IGridLayoutProps = {
 
 export default class DeerGridLayout extends React.Component<IGridLayoutProps, IGridLayoutState> {
   public static defaultProps: Partial<IGridLayoutProps> = defaultProps;
+  protected plugins: any[] = [];
+  protected middlewares: { [key in keyof Plugin<{}>]: Array<(...args: any[]) => void> }
+    = { onCommand: [], onConstruct: [], onEvent: []};
   private offsetParent = React.createRef<HTMLDivElement>();
   private layoutRefs: { [key in symbol]: Ref<GridItem> } = {}
 
   constructor(props: IGridLayoutProps) {
     super(props);
-    const { layout, children, grid, width, group, containerPadding } = props;
+    const { layout, children, grid, width, group, containerPadding, plugins } = props;
     const colWidth = calcColWidth(width, grid, containerPadding);
+    this.registerPlugins(plugins);
     this.state = {
       mounted: !Boolean(canUseDOM()),
       layoutState: new LayoutState(layout, group, getCols({ width, grid }))
@@ -163,6 +170,25 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
         layoutState: synchronizedState,
         colWidth,
         rowHeight: ( colWidth / grid[0]) * grid[1],
+      });
+    }
+  }
+
+  registerPlugins(plugins: Array<Plugin<DeerGridLayout>>) {
+    if (Array.isArray(plugins)) {
+      plugins.forEach(p => {
+        const { onConstruct, onCommand, onEvent } = p;
+        if (onConstruct) {
+          this.middlewares.onConstruct.push(onConstruct);
+        }
+
+        if (onCommand) {
+          this.middlewares.onCommand.push(onCommand);
+        }
+
+        if (onEvent) {
+          this.middlewares.onEvent.push(onEvent);
+        }
       });
     }
   }
