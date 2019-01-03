@@ -131,7 +131,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
   public static defaultProps: Partial<IGridLayoutProps> = defaultProps;
   protected plugins: any[] = [];
   protected middlewares: { [key in keyof Plugin<{}>]: Array<(...args: any[]) => void> }
-    = { onCommand: [], onConstruct: [], onEvent: []};
+    = { onCommand: [], onConstruct: [], onEvent: [], render: []};
   private offsetParent = React.createRef<HTMLDivElement>();
   private layoutRefs: { [key in symbol]: Ref<GridItem> } = {}
 

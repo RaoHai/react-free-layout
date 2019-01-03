@@ -9,7 +9,7 @@ describe('layout with plugin', () => {
       layout={[{ i: 'a', x: 10, y: 10, w: 10, h: 10}]}
       width={1024}
       grid={[8, 8]}
-      plugins={[{ onCommand: () => {}, onConstruct: () => {}, onEvent: () => {} }]}
+      plugins={[{ onCommand: () => {}, onConstruct: () => {}, onEvent: () => {}, render: () => null }]}
     >
       <div key="a">hello world</div>
     </Layout>);
