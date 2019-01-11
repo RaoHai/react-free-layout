@@ -371,7 +371,6 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
 
     this.props.onResizeStop(layoutState.layout, oldResizeItem, l, null, e, node);
 
-
     // Set state
     this.setState({
       layoutState: layoutState.set({ activeDrag: null }),
