@@ -104,7 +104,7 @@ export type IGridLayoutProps = {
   height?: number;
   maxRows: number;
   fluid: boolean,
-  style?: {};
+  style?: any;
   wrapperStyle?: {};
   autoSize?: boolean;
   useTransform?: boolean;
@@ -853,7 +853,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       <div
         style={{
           ...style,
-          width,
+          width: style && style.width || width,
           height: height ? Math.max(height, calcedHeight) : calcedHeight,
           position: 'relative'
         }}

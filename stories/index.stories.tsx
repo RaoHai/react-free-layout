@@ -25,6 +25,14 @@ storiesOf("Basic Usage", module)
       <div key="a">xxx</div>
     </Layout>
   </>)
+  .add('dynamic layout', () => <Layout
+      width={1024}
+      grid={[8, 8]}
+      layout={[{ i: 'a', w: 12, h: 10, x: 10, y: 10 }]}
+      style={{ width: '100%' }}
+    >
+      <div key="a">xxx</div>
+    </Layout>)
   .add('helper', () => <Layout
     {...dragActions}
     width={1024}
