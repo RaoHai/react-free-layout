@@ -88,10 +88,25 @@ export function setTransform(
   useTransform = true,
   containerWidth?: number,
 ): {} {
+
+  let translate;
   // Replace unitless items with px
-  const translate = containerWidth ?
-    `translate(${left / containerWidth * 100}%,${top}px)` :
-    `translate(${left}px,${top}px)`;
+  if (containerWidth) {
+    translate = `translate(0,${top}px)`;
+    return {
+      transform: translate,
+      WebkitTransform: translate,
+      MozTransform: translate,
+      msTransform: translate,
+      OTransform: translate,
+      height: `${height}px`,
+      left: `${left / containerWidth * 100}%`,
+      width: `${width / containerWidth * 100}%`,
+      position: 'absolute',
+    };
+  }
+
+  translate = `translate(${left}px,${top}px)`;
   const transformProps = useTransform ? {
     left: 0,
     top: 0,
@@ -109,7 +124,8 @@ export function setTransform(
     ...transformProps,
     width: containerWidth ? `${width / containerWidth * 100}%` : `${width}px`,
     height: `${height}px`,
-    position: "absolute",
+    position: 'absolute',
+    zIndex: 1,
   };
 }
 
