@@ -42,7 +42,7 @@ version: 2
 jobs:
   test10:
     <<: *node10
-    <<: *test10
+    <<: *lint
 
 workflows:
   version: 2
