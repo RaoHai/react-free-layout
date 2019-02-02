@@ -1,51 +1,27 @@
-aliases:
-  - &restore-yarn-cache-10
-    keys:
-      - v2-yarn-10-{{ .Branch }}-{{ checksum "yarn.lock" }}
-      # Fallback in case checksum fails
-      - v2-yarn-10-{{ .Branch }}-
-
-  - &save-yarn-cache-10
-    paths:
-      - node_modules
-      - ~/.cache/yarn
-    key: v2-yarn-10-{{ .Branch }}-{{ checksum "yarn.lock" }}
-
-  - &yarn
-    |
-      yarn install --non-interactive --cache-folder ~/.cache/yarn --ignore-engines
-
-  - &lint
-    steps:
-      - checkout
-      - restore-cache: *restore-yarn-cache-10
-      - run: *yarn
-      - save-cache: *save-yarn-cache-10
-      - run:
-          name: Prettier
-          command: yarn lint
-          when: always
-      - run:
-          name: Typescript
-          command: yarn test
-          when: always
-      - run:
-          name: Lint
-          command: yarn coverage
-          when: always
-
-node10: &node10
-  docker:
-    - image: neotracker/neo-one-circleci-node:10.13.0-1
-
 version: 2
 jobs:
-  lint:
-    <<: *node10
-    <<: *lint
+  build:
+    docker:
+      - image: node:8
+    working_directory: ~/repo
 
-workflows:
-  version: 2
-  test10:
-    jobs:
-      - lint:
+    steps:
+      - checkout
+      - run: yarn --version
+
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "yarn.lock" }}
+          - v1-dependencies-
+
+      - run: yarn install codecov -g
+      - run: yarn install --frozen-lockfile
+
+      - run: yarn lint
+      - run: yarn coverage
+      - run: codecov
+
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "yarn.lock" }}
