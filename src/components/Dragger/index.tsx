@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { isValidElement } from 'react';
 import ReactDOM from 'react-dom';
 import DisposableComponent from '../../utils/disposable';
 import { persist } from '../../utils/events';
@@ -97,6 +97,9 @@ export default class Draggable extends DisposableComponent<DraggableProps, Dragg
 
   render() {
     const child = React.Children.only(this.props.children);
+    if (!isValidElement(child)) {
+      return null;
+    }
     const events = this.props.mounted ? {
       onMouseDown: this.handleTopDragStart,
       onTouchStart: this.handleTopDragStart,

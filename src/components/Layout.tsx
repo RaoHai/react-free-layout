@@ -1,4 +1,4 @@
-import React, { ReactChild, MouseEvent as ReactMouseEvent, isValidElement, Ref } from 'react';
+import React, { ReactChild, MouseEvent as ReactMouseEvent, isValidElement, Ref, ReactNode } from 'react';
 import LayoutState, { Groups, Group, LayoutItem, defaultLevel, Layout } from '../model/LayoutState';
 import { classNames, isEqual, pickByRect, pickLayout, canUseDOM, GridRect } from '../utils';
 
@@ -68,8 +68,13 @@ const defaultProps = {
   minConstraints: [ 0, 0 ] as [ number, number ],
   maxConstraints: [ Infinity, Infinity ] as [ number, number ],
   useTransform: true,
+<<<<<<< HEAD
   layout: [],
   plugins: [],
+=======
+  fluid: false,
+  layout: [],
+>>>>>>> fix/circle-ci
 }
 
 
@@ -104,7 +109,8 @@ export type IGridLayoutProps = {
   width: number;
   height?: number;
   maxRows: number;
-  style?: {};
+  fluid: boolean,
+  style?: any;
   wrapperStyle?: {};
   plugins: Array<Plugin<any>>;
   autoSize?: boolean;
@@ -615,7 +621,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     children: ReactChild,
     extProps?: Partial<GridItem['props']>,
   ) => {
-    const { width, containerPadding, maxRows, useTransform } = this.props;
+    const { width, containerPadding, maxRows, useTransform, fluid } = this.props;
     const cols = getCols(this.props);
     const { colWidth, rowHeight } = this.state;
     return <GridItem
@@ -639,6 +645,10 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onContextMenu={this.onContextMenu.bind(this, activeDrag)}
       ref={this.getLayoutRefs(activeDrag.i)}
       parent={activeDrag.parent}
+<<<<<<< HEAD
+=======
+      fluid={fluid}
+>>>>>>> fix/circle-ci
       {...callbacks}
     >
       {children}
@@ -731,7 +741,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     const { layoutState, selecting, mounted } = this.state;
     const children = layoutState.getChildren();
 
-    const extraChildren: ReactChild[] = [];
+    const extraChildren: ReactNode[] = [];
     const childKeyMap: { [key: string]: ReactChild } = {};
 
     if (!mounted) {
@@ -875,7 +885,11 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       <div
         style={{
           ...style,
+<<<<<<< HEAD
           width,
+=======
+          width: style && style.width || width,
+>>>>>>> fix/circle-ci
           height: height ? Math.max(height, calcedHeight) : calcedHeight,
           position: 'relative'
         }}

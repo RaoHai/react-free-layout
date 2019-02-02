@@ -1,4 +1,4 @@
-import React, { Component, MouseEventHandler } from 'react';
+import React, { Component, MouseEventHandler, isValidElement } from 'react';
 import Draggable, { DraggableData, DraggerEvent } from './Dragger';
 import { setTransform, getOffsetParent, OffsetParent, classNames, offsetXYFromParent, canUseDOM } from '../utils';
 import { LayoutItem } from '../model/LayoutState';
@@ -45,6 +45,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
   LayoutItem &
   {
     offsetParent?: OffsetParent;
+    fluid?: boolean;
     className?: string;
     offsets: number[];
     cols: number;
@@ -65,6 +66,7 @@ export type GridItemProps = GridDragCallbacks<GridDragCallback> &
     inGroup?: boolean;
     parent?: LayoutItem['parent'];
     onContextMenu?: MouseEventHandler;
+    children: React.ReactChild;
   };
 
 export default class GridItem extends Component<GridItemProps, {
@@ -158,7 +160,7 @@ export default class GridItem extends Component<GridItemProps, {
       return handler.call(this, this.props.i, x, y, {
         e,
         node,
-        newPosition,
+        newPosition: { x: newPosition.left, y: newPosition.top },
         dx: x - this.props.x,
         dy: y - this.props.y,
       });
@@ -190,6 +192,7 @@ export default class GridItem extends Component<GridItemProps, {
       margin, colWidth, containerPadding, rowHeight, isDraggable = true,
       x, y, w, h, scale, inGroup,
       parent, children, className, style, active, selected, onContextMenu, useTransform,
+      fluid, containerWidth,
     } = this.props;
 
     const out = {
@@ -202,8 +205,13 @@ export default class GridItem extends Component<GridItemProps, {
       height: Math.round(rowHeight * h + Math.max(0, h - 1) * margin[1]) * scale,
     };
 
-    const child = React.Children.only(children);
+    const onlyChild = React.Children.only(children);
 
+    if (!isValidElement(onlyChild)) {
+      return null;
+    }
+
+    const child = onlyChild as React.ReactElement<any>;
     let newChild = React.cloneElement(child, {
       className: classNames(
         "react-grid-item",
@@ -225,7 +233,7 @@ export default class GridItem extends Component<GridItemProps, {
         top: 0,
         ...style,
         ...child.props.style,
-        ...setTransform(out, useTransform),
+        ...setTransform(out, useTransform, fluid ? containerWidth : undefined),
       },
       onContextMenu,
     });
