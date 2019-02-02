@@ -18,6 +18,7 @@ export interface SelectionProps {
   onSelect: (start?: MousePosition, end?: MousePosition) => void;
   onSelectStart: () => void;
   onSelectEnd: (start?: MousePosition, end?: MousePosition) => void;
+  children: JSX.Element[] | JSX.Element;
 }
 
 export interface SelectionState {
