@@ -40,7 +40,7 @@ node10: &node10
 
 version: 2
 jobs:
-  test10:
+  lint:
     <<: *node10
     <<: *lint
 
@@ -48,4 +48,4 @@ workflows:
   version: 2
   test10:
     jobs:
-      - test10:
+      - lint:
