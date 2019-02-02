@@ -1,4 +1,4 @@
-import React, { ReactChild, MouseEvent as ReactMouseEvent, isValidElement, Ref } from 'react';
+import React, { ReactChild, MouseEvent as ReactMouseEvent, isValidElement, Ref, ReactNode } from 'react';
 import LayoutState, { Groups, Group, LayoutItem, defaultLevel, Layout } from '../model/LayoutState';
 import { classNames, isEqual, pickByRect, pickLayout, canUseDOM, GridRect } from '../utils';
 
@@ -169,7 +169,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     }
   }
 
-  onDragStart = (i: string, x: number, y: number, ev: GridDragEvent) => {
+  onDragStart = (i: string | symbol, x: number, y: number, ev: GridDragEvent) => {
     const { layoutState } = this.state;
     const l = layoutState.getLayoutItem(i) as LayoutItem;
     const {
@@ -204,7 +204,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     });
   }
 
-  onDrag = (i: string, x: number, y: number, { e, node, dx, dy }: GridDragEvent) => {
+  onDrag = (i: string | symbol, x: number, y: number, { e, node, dx, dy }: GridDragEvent) => {
     const { layoutState } = this.state;
     const {
       oldDragItem,
@@ -240,7 +240,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
    * @param {Event} e The mousedown event
    * @param {Element} node The current dragging DOM element
    */
-  onDragStop = (i: string, x: number, y: number, { e, node, dx, dy }: GridDragEvent) => {
+  onDragStop = (i: string | symbol, x: number, y: number, { e, node, dx, dy }: GridDragEvent) => {
     const { layoutState } = this.state;
     const {
       oldDragItem,
@@ -709,7 +709,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
     const { layoutState, selecting, mounted } = this.state;
     const children = layoutState.getChildren();
 
-    const extraChildren: ReactChild[] = [];
+    const extraChildren: ReactNode[] = [];
     const childKeyMap: { [key: string]: ReactChild } = {};
 
     if (!mounted) {

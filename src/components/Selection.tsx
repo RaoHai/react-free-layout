@@ -1,4 +1,4 @@
-import React, { Ref } from 'react';
+import React, { Ref, isValidElement } from 'react';
 import ReactDOM from 'react-dom';
 import { getTouchIdentifier, getControlPosition, noop, OffsetParent, getOffsetParent, setTransform, Position, offsetXYFromParent } from '../utils';
 import DisposableComponent from '../utils/disposable';
@@ -128,6 +128,9 @@ export class Selection extends DisposableComponent<SelectionProps, SelectionStat
   render() {
     const { children, style } = this.props;
     const onlyChild = React.Children.only(children);
+    if (!isValidElement(onlyChild)) {
+      return;
+    }
     return <div
       className="react-grid-layout-selection-wrapper"
       data-role="selection"
@@ -135,7 +138,7 @@ export class Selection extends DisposableComponent<SelectionProps, SelectionStat
       ref={this.wrapperRef}
       onMouseDown={this.startSelection}
     >
-      {React.cloneElement(onlyChild, {
+      {React.cloneElement(onlyChild as React.ReactElement<any>, {
         ref: this.props.forwardRef,
         onMouseDown: this.startSelection,
         onTouchStart: this.startSelection,

@@ -1,0 +1,51 @@
+aliases:
+  - &restore-yarn-cache-10
+    keys:
+      - v2-yarn-10-{{ .Branch }}-{{ checksum "yarn.lock" }}
+      # Fallback in case checksum fails
+      - v2-yarn-10-{{ .Branch }}-
+
+  - &save-yarn-cache-10
+    paths:
+      - node_modules
+      - ~/.cache/yarn
+    key: v2-yarn-10-{{ .Branch }}-{{ checksum "yarn.lock" }}
+
+  - &yarn
+    |
+      yarn install --non-interactive --cache-folder ~/.cache/yarn --ignore-engines
+
+  - &lint
+    steps:
+      - checkout
+      - restore-cache: *restore-yarn-cache-10
+      - run: *yarn
+      - save-cache: *save-yarn-cache-10
+      - run:
+          name: Prettier
+          command: yarn lint
+          when: always
+      - run:
+          name: Typescript
+          command: yarn test
+          when: always
+      - run:
+          name: Lint
+          command: yarn coverage
+          when: always
+
+node10: &node10
+  docker:
+    - image: neotracker/neo-one-circleci-node:10.13.0-1
+
+version: 2
+jobs:
+  test10:
+    <<: *node10
+    <<: *test10
+
+workflows:
+  version: 2
+  test10:
+    jobs:
+      - test10:
