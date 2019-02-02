@@ -160,7 +160,7 @@ export default class GridItem extends Component<GridItemProps, {
       return handler.call(this, this.props.i, x, y, {
         e,
         node,
-        newPosition: { x: newPosition.left, y: newPosition.top },
+        newPosition,
         dx: x - this.props.x,
         dy: y - this.props.y,
       });
