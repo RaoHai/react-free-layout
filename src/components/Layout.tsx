@@ -68,13 +68,9 @@ const defaultProps = {
   minConstraints: [ 0, 0 ] as [ number, number ],
   maxConstraints: [ Infinity, Infinity ] as [ number, number ],
   useTransform: true,
-<<<<<<< HEAD
   layout: [],
   plugins: [],
-=======
   fluid: false,
-  layout: [],
->>>>>>> fix/circle-ci
 }
 
 
@@ -645,10 +641,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       onContextMenu={this.onContextMenu.bind(this, activeDrag)}
       ref={this.getLayoutRefs(activeDrag.i)}
       parent={activeDrag.parent}
-<<<<<<< HEAD
-=======
       fluid={fluid}
->>>>>>> fix/circle-ci
       {...callbacks}
     >
       {children}
@@ -885,11 +878,7 @@ export default class DeerGridLayout extends React.Component<IGridLayoutProps, IG
       <div
         style={{
           ...style,
-<<<<<<< HEAD
-          width,
-=======
           width: style && style.width || width,
->>>>>>> fix/circle-ci
           height: height ? Math.max(height, calcedHeight) : calcedHeight,
           position: 'relative'
         }}
